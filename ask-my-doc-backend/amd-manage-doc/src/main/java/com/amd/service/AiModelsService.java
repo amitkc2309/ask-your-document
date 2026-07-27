@@ -1,0 +1,22 @@
+package com.amd.service;
+
+import com.amd.config.AiModelsProperties;
+import com.amd.config.AiProvider;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Map;
+
+@Service
+@Slf4j
+@RequiredArgsConstructor
+public class AiModelsService {
+
+    private final AiModelsProperties aiModelsProperties;
+
+    public Map<AiProvider, List<String>> getAiModels() {
+        return aiModelsProperties.getModels();
+    }
+}

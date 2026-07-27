@@ -1,0 +1,24 @@
+package com.amd.dto;
+
+import com.amd.config.AiProvider;
+import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class SearchRequest {
+    
+    @NotBlank(message = "Question is required")
+    private String keyword;
+    
+    private Integer maxResults = 5;
+    
+    private Integer snippetLength = 200;
+
+    private AiRequest aiRequest;
+}

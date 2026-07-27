@@ -1,0 +1,28 @@
+package com.amd.controller;
+
+import com.amd.dto.SearchRequest;
+import com.amd.dto.QuestionResponse;
+import com.amd.service.SearchService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/manage/search")
+@RequiredArgsConstructor
+@ConditionalOnProperty(name = "application.ai-mode", havingValue = "false")
+public class SearchController {
+
+    private final SearchService searchService;
+
+    @PostMapping("/docs")
+    public ResponseEntity<QuestionResponse> search(
+            @Valid @RequestBody SearchRequest question,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        return ResponseEntity.ok(searchService.search(question));
+    }
+}
