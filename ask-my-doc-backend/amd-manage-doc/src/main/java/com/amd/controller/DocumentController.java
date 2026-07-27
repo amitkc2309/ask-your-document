@@ -1,9 +1,11 @@
 package com.amd.controller;
 
 import com.amd.dto.DocumentDTO;
-import com.amd.entity.DocumentType;
+import com.amd.dto.DocumentStatusEvent;
+import com.amd.enums.DocumentType;
 import com.amd.security.SecurityUtils;
 import com.amd.service.DocumentService;
+import com.amd.service.NotificationHub;
 import com.amd.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
@@ -16,6 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Flux;
 
 import java.io.InputStream;
 import java.util.List;
@@ -27,6 +30,7 @@ public class DocumentController {
 
     private final DocumentService documentService;
     private final StorageService storageService;
+    private final NotificationHub notificationHub;
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<DocumentDTO> uploadDocument(
@@ -49,6 +53,11 @@ public class DocumentController {
                 .contentType(MediaType.parseMediaType(document.getContentType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + document.getFileName() + "\"")
                 .body(resource);
+    }
+
+    @GetMapping(value="/{id}/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<DocumentStatusEvent> getDocumentEvents(@PathVariable Long id) {
+        return notificationHub.stream(id);
     }
 
     @DeleteMapping("/{id}")

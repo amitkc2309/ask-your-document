@@ -10,10 +10,50 @@ import {
     ArrowRightOnRectangleIcon,
     UserCircleIcon, SparklesIcon
 } from '@heroicons/react/24/outline';
-import {doLogout, getUsername} from './keycloak';
+import {doLogout, getToken, getUsername} from './keycloak';
 import DocumentSearchNonAi from "./components/DocumentSearchNonAi.tsx";
 import {fetchAppConfig} from "./components/FetchAppConfig.tsx";
 import LayoutContainer from "./components/ui/LayoutContainer.tsx";
+import appconfig from "./config/config.ts";
+import {fetchEventSource} from '@microsoft/fetch-event-source';
+
+const steps = [
+    "UPLOADING",
+    "UPLOADED",
+    "QUEUED",
+    "PROCESSING",
+    "EMBEDDING",
+    "INDEXED",
+    "READY"
+];
+
+function StatusRow({current, step, label}: {
+    current: string;
+    step: string;
+    label: string;
+}) {
+
+    const currentIndex = steps.indexOf(current);
+    const stepIndex = steps.indexOf(step);
+
+    let icon = "○";
+    let color = "text-gray-400";
+
+    if (stepIndex < currentIndex) {
+        icon = "✓";
+        color = "text-green-600";
+    } else if (stepIndex === currentIndex) {
+        icon = "●";
+        color = "text-blue-600 font-semibold";
+    }
+
+    return (
+        <div className={`flex items-center py-1 ${color}`}>
+            <span className="w-6">{icon}</span>
+            <span>{label}</span>
+        </div>
+    );
+}
 
 function App() {
     const [config, setConfig] = useState(null);
@@ -29,6 +69,9 @@ function App() {
     const [uploadTitle, setUploadTitle] = useState('');
     const [uploadAuthor, setUploadAuthor] = useState('');
     const [uploadFile, setUploadFile] = useState<File | null>(null);
+    const [abortController, setAbortController] = useState<AbortController | null>(null);
+    const [uploadStatus, setUploadStatus] = useState("UPLOADING");
+    const [showUploadPopup, setShowUploadPopup] = useState(false);
 
     // Lifted State for DocumentSearch
     const [searchQuestion, setSearchQuestion] = useState('');
@@ -59,6 +102,39 @@ function App() {
             icon: Squares2X2Icon,
         },
     ];
+
+    const handleDocumentUploaded = async (documentId: string) => {
+        abortController?.abort();
+        const controller = new AbortController();
+        setAbortController(controller);
+        setShowUploadPopup(true);
+        setUploadStatus("UPLOADED");
+        await fetchEventSource(
+            `${appconfig.apiUrl}/manage/documents/${documentId}/events`,
+            {
+                signal: controller.signal,
+                headers: {
+                    Authorization: `Bearer ${getToken()}`
+                },
+                onmessage(event) {
+                    const status = JSON.parse(event.data);
+                    setUploadStatus(status.documentStatus);
+                    if (status.documentStatus === "READY") {
+                        setTimeout(() => {
+                            setShowUploadPopup(false);
+                        }, 3000);
+                    }
+                    if (status.documentStatus === "FAILED") {
+                        setTimeout(() => setShowUploadPopup(false), 3000);
+                        controller.abort();
+                    }
+                },
+                onerror(err) {
+                    console.error(err);
+                }
+            }
+        );
+    };
 
     return (
         <div className="min-h-screen bg-background">
@@ -161,10 +237,67 @@ function App() {
                             setAuthor={setUploadAuthor}
                             file={uploadFile}
                             setFile={setUploadFile}
+                            onDocumentUploaded={handleDocumentUploaded}
                         />
                     )}
                 </LayoutContainer>
             </main>
+            {showUploadPopup && (
+                <div
+                    className="fixed bottom-6 right-6 w-96 rounded-xl bg-white shadow-2xl border border-gray-200 p-5 z-50">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-semibold text-lg">
+                            📄 Processing Document
+                        </h3>
+                        {uploadStatus !== "READY" &&
+                            uploadStatus !== "FAILED" && (
+                                <div
+                                    className="h-5 w-5 rounded-full border-2 border-blue-600 border-t-transparent animate-spin"/>
+                            )}
+
+                    </div>
+                    <StatusRow
+                        current={uploadStatus}
+                        step="UPLOADED"
+                        label="Upload Completed"
+                    />
+                    <StatusRow
+                        current={uploadStatus}
+                        step="QUEUED"
+                        label="Waiting for Server"
+                    />
+                    <StatusRow
+                        current={uploadStatus}
+                        step="PROCESSING"
+                        label="Extracting Text"
+                    />
+                    <StatusRow
+                        current={uploadStatus}
+                        step="EMBEDDING"
+                        label="Generating Embeddings"
+                    />
+                    <StatusRow
+                        current={uploadStatus}
+                        step="INDEXED"
+                        label="Indexing Document"
+                    />
+                    <StatusRow
+                        current={uploadStatus}
+                        step="READY"
+                        label="Ready"
+                    />
+                    {uploadStatus === "READY" && (
+                        <div className="mt-4 rounded-lg bg-green-50 p-3 text-green-700 font-medium">
+                            ✅ Document is now searchable.
+                        </div>
+                    )}
+                    {uploadStatus === "FAILED" && (
+                        <div className="mt-4 rounded-lg bg-red-50 p-3 text-red-700 font-medium">
+                            ❌ Processing failed.
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Footer */}
             <footer className="bg-background border-t border-border mt-auto">

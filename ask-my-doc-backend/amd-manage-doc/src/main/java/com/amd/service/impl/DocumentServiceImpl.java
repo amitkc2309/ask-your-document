@@ -4,26 +4,27 @@ import com.amd.config.KafkaConfig;
 import com.amd.config.MinioConfig;
 import com.amd.dto.DocumentDTO;
 import com.amd.dto.DocumentProcessingMessage;
+import com.amd.dto.DocumentStatusEvent;
 import com.amd.entity.Document;
-import com.amd.entity.DocumentType;
-import com.amd.entity.ProcessingStatus;
-import com.amd.entity.elasticsearch.DocumentIndex;
+import com.amd.enums.DocumentStatus;
+import com.amd.enums.DocumentType;
+import com.amd.enums.ProcessingStatus;
 import com.amd.exception.ActionNotPermittedException;
 import com.amd.exception.ResourceNotFoundException;
 import com.amd.repository.DocumentRepository;
-import com.amd.repository.elasticsearch.DocumentIndexRepository;
 import com.amd.security.SecurityUtils;
 import com.amd.service.DBServices;
 import com.amd.service.DocumentService;
+import com.amd.service.DocumentStatusPublisher;
 import com.amd.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,13 +40,13 @@ public class DocumentServiceImpl implements DocumentService {
     private final DBServices dbServices;
     private final MinioConfig minioConfig;
     private final KafkaConfig kafkaConfig;
+    private final DocumentStatusPublisher  documentStatusPublisher;
 
     @Override
     public DocumentDTO uploadDocument(MultipartFile file, String title, String author, String username) {
 
         // Determine document type
         DocumentType documentType = determineDocumentType(file.getOriginalFilename());
-
         // Create document entity with PENDING status
         Document document = Document.builder()
                 .title(title)
@@ -62,9 +63,10 @@ public class DocumentServiceImpl implements DocumentService {
         // Save document metadata to get an ID
         Document savedDocument = documentRepository.save(document);
         String objectId = username + minioConfig.getMinioFileDelimiter() + savedDocument.getId();
+        documentStatusPublisher.publish(new DocumentStatusEvent(savedDocument.getId(), username, DocumentStatus.UPLOADING));
         // Store the file in the file system
         storageService.upload(objectId, file);
-
+        documentStatusPublisher.publish(new DocumentStatusEvent(savedDocument.getId(), username, DocumentStatus.UPLOADED));
         // Update the document with the file path
         savedDocument.setFilePath(objectId);
         savedDocument = documentRepository.save(savedDocument);
@@ -85,11 +87,13 @@ public class DocumentServiceImpl implements DocumentService {
         try {
             kafkaTemplate.send(kafkaConfig.getDocumentUploadTopic(), savedDocument.getId().toString(), message);
             log.info("Document processing message sent successfully: {}", savedDocument.getId());
+            documentStatusPublisher.publish(new DocumentStatusEvent(savedDocument.getId(), username, DocumentStatus.QUEUED));
         } catch (Exception ex) {
             log.error("Failed to send document processing message: {}", ex.getMessage(), ex);
             // Update document status to FAILED
             savedDocument.setProcessingStatus(ProcessingStatus.FAILED);
             documentRepository.save(savedDocument);
+            documentStatusPublisher.publish(new DocumentStatusEvent(savedDocument.getId(), username, DocumentStatus.FAILED));
         }
 
         log.info("Document uploaded and queued for processing: {}", savedDocument.getId());

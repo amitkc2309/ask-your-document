@@ -11,7 +11,7 @@ const DocumentUpload = ({
   author,
   setAuthor,
   file,
-  setFile,
+  setFile, onDocumentUploaded
 }: {
   title: string;
   setTitle: (value: string) => void;
@@ -19,6 +19,7 @@ const DocumentUpload = ({
   setAuthor: (value: string) => void;
   file: File | null;
   setFile: (file: File | null) => void;
+  onDocumentUploaded: (documentId: string) => void;
 }) => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
@@ -52,12 +53,12 @@ const DocumentUpload = ({
     formData.append('author', author);
 
     try {
-      await api.post(`${config.apiUrl}/manage/documents/upload`, formData, {
+      const response = await api.post(`${config.apiUrl}/manage/documents/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      
+      onDocumentUploaded(response.data.id);
       // Reset form
       setTitle('');
       setAuthor('');
@@ -170,7 +171,7 @@ const DocumentUpload = ({
 
           {success && (
             <div className="rounded-md bg-green-50 p-4">
-              <p className="text-sm text-green-600">Document uploaded successfully!</p>
+              <p className="text-sm text-green-600">Document Submitted for Processing !!</p>
             </div>
           )}
 

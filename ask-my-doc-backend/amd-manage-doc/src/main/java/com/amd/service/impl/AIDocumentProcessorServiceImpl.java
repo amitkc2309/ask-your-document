@@ -4,10 +4,13 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import com.amd.config.ElasticSearchConfig;
 import com.amd.dto.DocumentProcessingMessage;
+import com.amd.dto.DocumentStatusEvent;
 import com.amd.entity.Document;
-import com.amd.entity.ProcessingStatus;
+import com.amd.enums.DocumentStatus;
+import com.amd.enums.ProcessingStatus;
 import com.amd.repository.DocumentRepository;
 import com.amd.service.DocumentProcessorService;
+import com.amd.service.DocumentStatusPublisher;
 import com.amd.service.TextExtractionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +39,7 @@ public class AIDocumentProcessorServiceImpl implements DocumentProcessorService 
     private final EmbeddingModel embeddingModel;
     private final ElasticsearchClient elasticsearchClient;
     private final ElasticSearchConfig elasticSearchConfig;
+    private final DocumentStatusPublisher documentStatusPublisher;
 
     @KafkaListener(topics = "${application.kafka.document-upload-topic}", groupId = "${spring.kafka.consumer.group-id}")
     @Override
@@ -46,6 +50,7 @@ public class AIDocumentProcessorServiceImpl implements DocumentProcessorService 
                 .orElseThrow(() -> new RuntimeException("Document not found: " + message.getDocumentId()));
         if(document.getProcessingStatus() == ProcessingStatus.COMPLETED) return;
         try {
+            documentStatusPublisher.publish(new DocumentStatusEvent(message.getDocumentId(), message.getUploadedBy(), DocumentStatus.PROCESSING));
             String rawText = textExtractionService.extractTextFromFile(document);
             //Convert to Spring AI Document
             org.springframework.ai.document.Document adoc =
@@ -75,7 +80,7 @@ public class AIDocumentProcessorServiceImpl implements DocumentProcessorService 
                 enrichedChunks.add(new org.springframework.ai.document.Document(newText, metadata));
                 chunkIndex++;
             }
-
+            documentStatusPublisher.publish(new DocumentStatusEvent(message.getDocumentId(), message.getUploadedBy(), DocumentStatus.EMBEDDING));
             BulkRequest.Builder br = new BulkRequest.Builder();
             for (org.springframework.ai.document.Document chunk : enrichedChunks) {
                 float[] embedding = embeddingModel.embed(chunk.getText());
@@ -93,11 +98,12 @@ public class AIDocumentProcessorServiceImpl implements DocumentProcessorService 
                 );
             }
             elasticsearchClient.bulk(br.build());
-
+            documentStatusPublisher.publish(new DocumentStatusEvent(message.getDocumentId(), message.getUploadedBy(), DocumentStatus.INDEXED));
             // Update Database Status
             document.setProcessingStatus(ProcessingStatus.COMPLETED);
             document.setProcessedDate(LocalDateTime.now());
             documentRepository.save(document);
+            documentStatusPublisher.publish(new DocumentStatusEvent(message.getDocumentId(), message.getUploadedBy(), DocumentStatus.READY));
         } catch (IOException e) {
             log.error("Failed to process document: {} with error {}", document.getId(), e);
             document.setProcessingStatus(ProcessingStatus.FAILED);

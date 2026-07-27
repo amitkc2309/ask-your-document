@@ -2,34 +2,19 @@ package com.amd.service.impl;
 
 import com.amd.dto.DocumentProcessingMessage;
 import com.amd.entity.Document;
-import com.amd.entity.ProcessingStatus;
+import com.amd.enums.ProcessingStatus;
 import com.amd.entity.elasticsearch.DocumentIndex;
 import com.amd.repository.DocumentRepository;
 import com.amd.repository.elasticsearch.DocumentIndexRepository;
 import com.amd.service.DocumentProcessorService;
-import com.amd.service.StorageService;
 import com.amd.service.TextExtractionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.text.PDFTextStripper;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.time.LocalDateTime;
-import java.util.Iterator;
 
 @Service
 @RequiredArgsConstructor

@@ -1,6 +1,6 @@
 package com.amd.dto;
 
-import com.amd.config.AiProvider;
+import com.amd.enums.AiProvider;
 import lombok.Data;
 
 @Data

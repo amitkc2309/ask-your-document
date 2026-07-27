@@ -1,4 +1,4 @@
-package com.amd.entity;
+package com.amd.enums;
 
 public enum DocumentType {
     PDF,

@@ -1,7 +1,7 @@
 package com.amd.service;
 
 import com.amd.config.AiModelsProperties;
-import com.amd.config.AiProvider;
+import com.amd.enums.AiProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

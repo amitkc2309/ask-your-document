@@ -1,6 +1,6 @@
 package com.amd.entity.elasticsearch;
 
-import com.amd.entity.DocumentType;
+import com.amd.enums.DocumentType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

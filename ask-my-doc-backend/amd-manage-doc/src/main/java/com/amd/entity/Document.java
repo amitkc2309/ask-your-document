@@ -1,5 +1,7 @@
 package com.amd.entity;
 
+import com.amd.enums.DocumentType;
+import com.amd.enums.ProcessingStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

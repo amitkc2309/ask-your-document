@@ -1,7 +1,7 @@
 package com.amd.service;
 
 import com.amd.dto.DocumentDTO;
-import com.amd.entity.DocumentType;
+import com.amd.enums.DocumentType;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;

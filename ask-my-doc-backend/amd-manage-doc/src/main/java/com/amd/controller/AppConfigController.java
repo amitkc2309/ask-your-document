@@ -1,6 +1,6 @@
 package com.amd.controller;
 
-import com.amd.config.AiProvider;
+import com.amd.enums.AiProvider;
 import com.amd.service.AiModelsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

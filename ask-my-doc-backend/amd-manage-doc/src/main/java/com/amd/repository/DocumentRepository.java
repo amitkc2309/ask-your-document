@@ -1,7 +1,7 @@
 package com.amd.repository;
 
 import com.amd.entity.Document;
-import com.amd.entity.DocumentType;
+import com.amd.enums.DocumentType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

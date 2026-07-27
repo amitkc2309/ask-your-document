@@ -1,6 +1,5 @@
 package com.amd.dto;
 
-import com.amd.config.AiProvider;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

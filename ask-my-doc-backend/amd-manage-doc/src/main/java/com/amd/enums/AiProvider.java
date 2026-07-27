@@ -1,4 +1,4 @@
-package com.amd.config;
+package com.amd.enums;
 
 public enum AiProvider {
     OLLAMA,

@@ -1,5 +1,6 @@
 package com.amd.config;
 
+import com.amd.enums.AiProvider;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
