@@ -5,12 +5,14 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.amd.config.ElasticSearchConfig;
 import com.amd.dto.QuestionResponse;
 import com.amd.dto.RerankedDocument;
-import com.amd.dto.SearchRequest;
+import com.amd.dto.ChatRequest;
 import com.amd.service.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.beans.factory.annotation.Value;
@@ -58,8 +60,9 @@ public class AISearchServiceImpl implements SearchService {
     private final EmbeddingModel embeddingModel;
     private final ElasticsearchClient elasticsearchClient;
     private final ElasticSearchConfig elasticSearchConfig;
+    private final ChatMemory chatMemory;
 
-    public Flux<String> chat(SearchRequest request, String username) {
+    public Flux<String> chat(ChatRequest request, String username) {
         String userQuery = request.getKeyword();
         log.info("streamSearch username:{}", username);
         //Optimize the query using LLM. TODO
@@ -108,6 +111,11 @@ public class AISearchServiceImpl implements SearchService {
         ChatClient chatClient = chatClientFactory.getChatClient(request.getAiRequest());
         return chatClient.prompt()
                 .options(chatOptionsFactory.buildChatOptions(request.getAiRequest()))
+                .advisors(advisorSpec ->
+                        advisorSpec
+                                .advisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
+                                //username will work as conversationID
+                                .param(ChatMemory.CONVERSATION_ID, username))
                 .user(promptUserSpec ->
                         promptUserSpec
                                 .text(askAnswerUserPrompt)
@@ -122,7 +130,7 @@ public class AISearchServiceImpl implements SearchService {
                 });
     }
 
-    private List<QuestionResponse.DocumentSnippet> createSnippets(SearchRequest request, List<RerankedDocument> reranked) {
+    private List<QuestionResponse.DocumentSnippet> createSnippets(ChatRequest request, List<RerankedDocument> reranked) {
         List<QuestionResponse.DocumentSnippet> snippets = reranked
                 .stream()
                 .map(r -> {
@@ -270,7 +278,7 @@ public class AISearchServiceImpl implements SearchService {
     }
 
     @Override
-    public QuestionResponse search(SearchRequest question) {
+    public QuestionResponse search(ChatRequest question) {
         throw  new UnsupportedOperationException("Non-streaming search is not supported. Use chat() instead.");
     }
 }

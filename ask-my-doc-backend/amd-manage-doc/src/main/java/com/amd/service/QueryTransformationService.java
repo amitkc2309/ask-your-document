@@ -1,6 +1,6 @@
 package com.amd.service;
 
-import com.amd.dto.SearchRequest;
+import com.amd.dto.ChatRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -20,7 +20,7 @@ public class QueryTransformationService {
     @Value("classpath:/templates/QueryRewritePromptTemplate.st")
     Resource rewritePrompt;
 
-    public String transform(SearchRequest request) {
+    public String transform(ChatRequest request) {
         log.info("Original Query: {}", request.getKeyword());
         ChatClient chatClient = chatClientFactory.getChatClient(request.getAiRequest());
         String transformedQuery = chatClient.prompt()

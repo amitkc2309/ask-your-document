@@ -3,7 +3,7 @@ package com.amd.service.impl;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.MultiMatchQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
-import com.amd.dto.SearchRequest;
+import com.amd.dto.ChatRequest;
 import com.amd.dto.QuestionResponse;
 import com.amd.dto.QuestionResponse.DocumentSnippet;
 import com.amd.entity.elasticsearch.DocumentIndex;
@@ -22,7 +22,6 @@ import org.springframework.data.elasticsearch.core.query.highlight.HighlightFiel
 import org.springframework.data.elasticsearch.core.query.highlight.HighlightFieldParameters;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
@@ -37,7 +36,7 @@ public class ElasticSearchServiceImpl implements SearchService {
 
     @Override
     @Transactional
-    public QuestionResponse search(SearchRequest request) {
+    public QuestionResponse search(ChatRequest request) {
         log.info("Processing search for: {}", request.getKeyword());
 
         Query multiMatchQuery = MultiMatchQuery.of(m -> m
@@ -108,7 +107,7 @@ public class ElasticSearchServiceImpl implements SearchService {
     }
 
     @Override
-    public Flux<String> chat(SearchRequest request, String username) {
+    public Flux<String> chat(ChatRequest request, String username) {
         throw new UnsupportedOperationException(
                 "Chat is not supported. Use search() instead.");
     }

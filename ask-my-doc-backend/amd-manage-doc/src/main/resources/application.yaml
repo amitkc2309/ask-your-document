@@ -38,6 +38,12 @@ spring:
         enabled: true
         options:
           model: nomic-embed-text
+    chat:
+      memory:
+        repository:
+          jdbc:
+            initialize-schema: always
+            schema: classpath:/schema/schema-postgresql.sql
 
   # Elasticsearch configuration
   elasticsearch:
@@ -136,4 +142,4 @@ logging:
         ai:
           chat:
             client:
-              advisor: INFO
+              advisor: DEBUG

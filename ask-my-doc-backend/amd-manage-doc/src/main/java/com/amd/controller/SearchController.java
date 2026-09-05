@@ -1,6 +1,6 @@
 package com.amd.controller;
 
-import com.amd.dto.SearchRequest;
+import com.amd.dto.ChatRequest;
 import com.amd.dto.QuestionResponse;
 import com.amd.service.SearchService;
 import jakarta.validation.Valid;
@@ -19,7 +19,7 @@ public class SearchController {
 
     @PostMapping("/docs")
     public ResponseEntity<QuestionResponse> search(
-            @Valid @RequestBody SearchRequest question,
+            @Valid @RequestBody ChatRequest question,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 

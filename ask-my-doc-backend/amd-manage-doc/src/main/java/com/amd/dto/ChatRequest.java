@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SearchRequest {
+public class ChatRequest {
     
     @NotBlank(message = "Question is required")
     private String keyword;

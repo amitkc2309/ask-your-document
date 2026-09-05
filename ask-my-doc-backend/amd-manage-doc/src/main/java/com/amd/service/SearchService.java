@@ -1,13 +1,12 @@
 package com.amd.service;
 
-import com.amd.dto.SearchRequest;
+import com.amd.dto.ChatRequest;
 import com.amd.dto.QuestionResponse;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
 
 
 public interface SearchService {
-    QuestionResponse search(SearchRequest question);
+    QuestionResponse search(ChatRequest question);
 
-    Flux<String> chat(SearchRequest request, String userName);
+    Flux<String> chat(ChatRequest request, String userName);
 }
