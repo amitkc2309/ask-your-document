@@ -101,6 +101,7 @@ management:
 #Custom application properties
 application:
   ai-mode: true
+  chat-memory-max-messages: 10
   models:
     openai:
       - gpt-5

@@ -1,6 +1,6 @@
-# Ask My Doc
+# Ask Your Document
 
-Ask My Doc is a sophisticated document management and intelligent search system that leverages AI to provide precise answers based on your uploaded documents. It features a modern microservices-friendly architecture with support for both traditional keyword search and advanced Retrieval-Augmented Generation (RAG).
+Ask Your Document is a sophisticated document management and intelligent search system that leverages AI to provide precise answers based on your uploaded documents. It features a modern microservices-friendly architecture with support for both traditional keyword search and advanced Retrieval-Augmented Generation (RAG).
 
 ## 🚀 Features
 

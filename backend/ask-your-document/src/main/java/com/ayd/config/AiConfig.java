@@ -4,6 +4,9 @@ import com.ayd.advisors.TokenUsageAuditAdvisor;
 import io.micrometer.observation.ObservationRegistry;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.MessageWindowChatMemory;
+import org.springframework.ai.chat.memory.repository.jdbc.JdbcChatMemoryRepository;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.ollama.OllamaEmbeddingModel;
@@ -26,6 +29,9 @@ public class AiConfig {
 
     @Value("${spring.ai.ollama.embedding.options.model}")
     public String embeddingModelName;
+
+    @Value("${application.chat-memory-max-messages}")
+    public int chatMemoryMaxMessage;
 
     @Value("classpath:/templates/SystemPromptTemplate.st")
     Resource askAnswerSystemPrompt;
@@ -64,6 +70,12 @@ public class AiConfig {
                 .defaultSystem(askAnswerSystemPrompt)
                 .defaultAdvisors(new SimpleLoggerAdvisor())
                 .build();
+    }
+
+    @Bean
+    ChatMemory chatMemory(JdbcChatMemoryRepository  repository) {
+        return MessageWindowChatMemory.builder().maxMessages(chatMemoryMaxMessage)
+                .chatMemoryRepository(repository).build();
     }
 
     @Bean
