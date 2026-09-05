@@ -2,8 +2,8 @@ import Keycloak from 'keycloak-js';
 
 const keycloakConfig = {
   url: 'http://localhost:7080',
-  realm: 'ask-my-doc',
-  clientId: 'ask-my-doc-ui-client',
+  realm: 'ask-your-document',
+  clientId: 'ask-your-document-ui-client',
 };
 
 const keycloak = new Keycloak(keycloakConfig);
