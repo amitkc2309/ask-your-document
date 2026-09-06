@@ -24,7 +24,6 @@ import org.springframework.core.io.Resource;
 import java.util.List;
 
 @Configuration
-@ConditionalOnProperty(name = "application.ai-mode", havingValue = "true")
 public class AiConfig {
 
     @Value("${spring.ai.ollama.embedding.options.model}")

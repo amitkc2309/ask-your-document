@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "application.ai-mode", havingValue = "true")
 @Slf4j
 public class VectorDBServices implements DBServices {
 

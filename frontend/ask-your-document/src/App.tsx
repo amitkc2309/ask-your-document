@@ -117,6 +117,7 @@ function App() {
                     Authorization: `Bearer ${getToken()}`
                 },
                 onmessage(event) {
+                    console.log("******")
                     const status = JSON.parse(event.data);
                     setUploadStatus(status.documentStatus);
                     if (status.documentStatus === "READY") {

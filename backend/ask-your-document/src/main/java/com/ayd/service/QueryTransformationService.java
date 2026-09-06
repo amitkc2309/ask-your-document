@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@ConditionalOnProperty(name = "application.ai-mode", havingValue = "true")
 public class QueryTransformationService {
 
     private final ChatClientFactory chatClientFactory;

@@ -51,10 +51,6 @@ spring:
         initialize-schema: true
         collection-name: ask-your-document
 
-  # Elasticsearch configuration
-  elasticsearch:
-    uris: http://localhost:9200
-
     # Kafka configuration
   kafka:
     bootstrap-servers: localhost:9092
@@ -131,11 +127,12 @@ application:
   query-transform: false
   ai-input-size: 5
   reranker:
+    rerank: false
     reranker-url: http://localhost:8001
     minScoreThreshold: 0.1
   vector-store:
     top-k: 5
-    similarity-threshold: 0.1
+    similarity-threshold: 0.5
 
 
 logging:

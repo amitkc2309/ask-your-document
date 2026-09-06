@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@ConditionalOnProperty(name = "application.ai-mode", havingValue = "true")
 public class AISearchServiceImpl implements SearchService {
 
     @Value("${application.ai-input-size}")

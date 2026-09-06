@@ -1,6 +1,5 @@
 package com.ayd.service.impl;
 
-import co.elastic.clients.elasticsearch.core.BulkRequest;
 import com.ayd.dto.DocumentProcessingMessage;
 import com.ayd.dto.DocumentStatusEvent;
 import com.ayd.entity.UserDocument;
@@ -13,10 +12,8 @@ import com.ayd.service.TextExtractionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
-import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +27,6 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@ConditionalOnProperty(name = "application.ai-mode", havingValue = "true")
 public class RagDocumentProcessorServiceImpl implements DocumentProcessorService {
 
     private final DocumentRepository documentRepository;

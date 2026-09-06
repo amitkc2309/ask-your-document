@@ -20,14 +20,23 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@ConditionalOnProperty(name = "application.ai-mode", havingValue = "true")
 public class ReRankingService {
     private final WebClient webClient;
 
     @Value("${application.reranker.reranker-url}")
     private String rerankerUrl;
+    @Value("${application.reranker.rerank}")
+    private Boolean reRank;
 
     public List<RerankedDocument> rerank(String query, List<Document> documents) {
+        if(Boolean.FALSE.equals(reRank)){
+            return documents.stream()
+                    .map(r -> new RerankedDocument(
+                            r,
+                            r.getScore()
+                    ))
+                    .toList();
+        }
         if (documents == null || documents.isEmpty()) {
             return List.of();
         }

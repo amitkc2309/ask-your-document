@@ -14,7 +14,6 @@ import reactor.core.publisher.Flux;
 
 @RestController
 @RequestMapping("/manage/search")
-@ConditionalOnProperty(name = "application.ai-mode", havingValue = "true")
 @RequiredArgsConstructor
 public class AISearchController {
 

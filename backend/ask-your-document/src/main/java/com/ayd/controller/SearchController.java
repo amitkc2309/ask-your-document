@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/manage/search")
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "application.ai-mode", havingValue = "false")
 public class SearchController {
 
     private final SearchService searchService;
