@@ -20,4 +20,6 @@ public class ChatRequest {
     private Integer snippetLength = 200;
 
     private AiRequest aiRequest;
+
+    private String conversationId;
 }

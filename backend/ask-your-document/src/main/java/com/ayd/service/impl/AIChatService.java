@@ -1,7 +1,6 @@
 package com.ayd.service.impl;
 
 import com.ayd.dto.ChatRequest;
-import com.ayd.dto.QuestionResponse;
 import com.ayd.dto.RerankedDocument;
 import com.ayd.service.*;
 import lombok.RequiredArgsConstructor;
@@ -9,15 +8,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class AISearchServiceImpl implements SearchService {
+public class AIChatService {
 
     @Value("${application.ai-input-size}")
     public int aiInputSize;
@@ -103,8 +103,8 @@ public class AISearchServiceImpl implements SearchService {
                 .options(chatOptionsFactory.buildChatOptions(request.getAiRequest()))
                 .advisors(advisorSpec ->
                         advisorSpec
-                                .advisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
-                                //username will work as conversationID
+                                .advisors(MessageChatMemoryAdvisor.builder(chatMemory)
+                                        .build())
                                 .param(ChatMemory.CONVERSATION_ID, username))
                 .user(promptUserSpec ->
                         promptUserSpec
@@ -120,8 +120,7 @@ public class AISearchServiceImpl implements SearchService {
                 });
     }
 
-    @Override
-    public QuestionResponse search(ChatRequest question) {
-        throw  new UnsupportedOperationException("Non-streaming search is not supported. Use chat() instead.");
+    public List<Message> getConversationById(String conversationId) {
+        return chatMemory.get(conversationId);
     }
 }

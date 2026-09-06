@@ -44,7 +44,7 @@ const Chat = ({question, setQuestion, searchResults, setSearchResults}) => {
 
             const controller = new AbortController();
             cancelStreamRef = () => controller.abort();
-            const response = await fetch(`${config.apiUrl}/manage/search/docs`, {
+            const response = await fetch(`${config.apiUrl}/ai/chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
