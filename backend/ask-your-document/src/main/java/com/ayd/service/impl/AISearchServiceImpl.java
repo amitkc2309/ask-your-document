@@ -71,7 +71,6 @@ public class AISearchServiceImpl implements SearchService {
         if (vectorSearchResult.isEmpty()) {
             return Flux.just("No results found.");
         }
-        log.info("vectorSearchResult:{}", vectorSearchResult);
         long esEndTime = System.currentTimeMillis();
         log.info("***vectorSearchResult response time: {} ms", (esEndTime-esStartTime));
         // Re-rank

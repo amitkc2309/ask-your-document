@@ -132,7 +132,7 @@ application:
     minScoreThreshold: 0.1
   vector-store:
     top-k: 5
-    similarity-threshold: 0.5
+    similarity-threshold: 0.2
 
 
 logging:

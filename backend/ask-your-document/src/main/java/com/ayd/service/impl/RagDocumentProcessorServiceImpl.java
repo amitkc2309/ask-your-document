@@ -12,6 +12,7 @@ import com.ayd.service.TextExtractionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
+import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -31,7 +32,7 @@ public class RagDocumentProcessorServiceImpl implements DocumentProcessorService
 
     private final DocumentRepository documentRepository;
     private final TextExtractionService textExtractionService;
-    private final TokenTextSplitter tokenTextSplitter;
+    private final TextSplitter textSplitter;
     private final DocumentStatusPublisher documentStatusPublisher;
     private final VectorStore vectorStore;
 
@@ -45,17 +46,9 @@ public class RagDocumentProcessorServiceImpl implements DocumentProcessorService
         if(document.getProcessingStatus() == ProcessingStatus.COMPLETED) return;
         try {
             documentStatusPublisher.publish(new DocumentStatusEvent(message.getDocumentId(), message.getUploadedBy(), DocumentStatus.PROCESSING));
-            String rawText = textExtractionService.extractTextFromFile(document);
-            //Convert to Spring AI Document
-            Document sourceDocument = new Document(rawText);
-            // This ensures every chunk knows it belongs to a 'uploadedBy' and Document ID '123'
-            sourceDocument.getMetadata().put("documentId", document.getId());
-            sourceDocument.getMetadata().put("author", document.getAuthor());
-            sourceDocument.getMetadata().put("uploadedBy", document.getUploadedBy());
-            sourceDocument.getMetadata().put("type", document.getDocumentType().name());
-
+            List<Document> documents = textExtractionService.extractTextFromFile(document);
             //Split into chunks
-            List<Document> chunks = tokenTextSplitter.apply(List.of(sourceDocument));
+            List<Document> chunks = textSplitter.split(documents);
             // Enrich chunks
             List<Document> enrichedChunks = new ArrayList<>();
             for (Document chunk : chunks) {
@@ -66,6 +59,7 @@ public class RagDocumentProcessorServiceImpl implements DocumentProcessorService
                 metadata.put("author", document.getAuthor());
                 metadata.put("uploadedBy", document.getUploadedBy());
                 metadata.put("type", document.getDocumentType().name());
+                metadata.put("source", document.getFileName());
                 enrichedChunks.add(new Document(newText, metadata));
             }
             documentStatusPublisher.publish(new DocumentStatusEvent(message.getDocumentId(), message.getUploadedBy(), DocumentStatus.EMBEDDING));

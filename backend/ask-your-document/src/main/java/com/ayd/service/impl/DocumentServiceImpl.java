@@ -16,7 +16,7 @@ import com.ayd.security.SecurityUtils;
 import com.ayd.service.DBServices;
 import com.ayd.service.DocumentService;
 import com.ayd.service.DocumentStatusPublisher;
-import com.ayd.service.StorageService;
+import com.ayd.service.ObjectStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 public class DocumentServiceImpl implements DocumentService {
 
     private final DocumentRepository documentRepository;
-    private final StorageService storageService;
+    private final ObjectStorageService storageService;
     private final KafkaTemplate<String, DocumentProcessingMessage> kafkaTemplate;
     private final DBServices dbServices;
     private final MinioConfig minioConfig;

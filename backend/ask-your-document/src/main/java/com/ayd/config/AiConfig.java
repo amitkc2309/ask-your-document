@@ -14,6 +14,7 @@ import org.springframework.ai.ollama.api.OllamaApi;
 import org.springframework.ai.ollama.api.OllamaEmbeddingOptions;
 import org.springframework.ai.ollama.management.ModelManagementOptions;
 import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -42,15 +43,14 @@ public class AiConfig {
     }
 
     @Bean
-    public TokenTextSplitter tokenTextSplitter() {
-        return new TokenTextSplitter(
-                300,
-                100,
-                5,
-                10000,
-                true,
-                List.of('.', ',', '?', '!', '\n')
-        );
+    public TextSplitter tokenTextSplitter() {
+        return TokenTextSplitter.builder()
+                .withChunkSize(800)
+                .withMinChunkSizeChars(350)
+                .withMinChunkLengthToEmbed(10)
+                .withMaxNumChunks(5000)
+                .withPunctuationMarks(List.of('.', '?', '!', '\n'))
+                .build();
     }
 
     @Bean("ollamaChatClient")

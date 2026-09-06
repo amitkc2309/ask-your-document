@@ -1,13 +1,12 @@
 package com.ayd.service.impl;
 
 import com.ayd.config.MinioConfig;
-import com.ayd.service.StorageService;
+import com.ayd.service.ObjectStorageService;
 import io.minio.*;
 import io.minio.errors.*;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,7 +18,7 @@ import java.security.NoSuchAlgorithmException;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class MinioStorageService implements StorageService {
+public class MinioStorageService implements ObjectStorageService {
 
     private final MinioClient minioClient;
     private final MinioConfig minioConfig;

@@ -46,42 +46,6 @@ services:
       retries: 3
       start_period: 30s
 
-  ayd-elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:9.3.2
-    container_name: ayd-elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - xpack.security.http.ssl.enabled=false
-      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
-    ports:
-      - "9200:9200"
-    volumes:
-      - esdata:/usr/share/elasticsearch/data
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    mem_limit: 2g
-    networks:
-      - ayd
-    healthcheck:
-      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q 'status.*green\\|status.*yellow'"]
-      interval: 20s
-      timeout: 10s
-      retries: 3
-
-  ayd-kibana:
-    image: docker.elastic.co/kibana/kibana:9.3.2
-    container_name: ayd-kibana
-    ports:
-      - "5601:5601"
-    environment:
-      - ELASTICSEARCH_HOSTS=http://ayd-elasticsearch:9200
-    depends_on:
-      - ayd-elasticsearch
-    networks:
-      - ayd
 
   ayd-redis:
     image: redis:7

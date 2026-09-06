@@ -6,7 +6,7 @@ import com.ayd.enums.DocumentType;
 import com.ayd.security.SecurityUtils;
 import com.ayd.service.DocumentService;
 import com.ayd.service.NotificationHub;
-import com.ayd.service.StorageService;
+import com.ayd.service.ObjectStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -29,7 +29,7 @@ import java.util.List;
 public class DocumentController {
 
     private final DocumentService documentService;
-    private final StorageService storageService;
+    private final ObjectStorageService storageService;
     private final NotificationHub notificationHub;
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
