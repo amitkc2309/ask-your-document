@@ -36,9 +36,6 @@ public class AiConfig {
     @Value("${application.chat-memory-max-messages}")
     public int chatMemoryMaxMessage;
 
-    @Value("classpath:/templates/SystemPromptTemplate.st")
-    Resource askAnswerSystemPrompt;
-
     @Value("${application.vector-store.top-k}")
     public int vectorStoreTopK;
     @Value("${application.vector-store.similarity-threshold}")
@@ -81,7 +78,6 @@ public class AiConfig {
     ChatClient ollamaChatClient(
             OllamaChatModel model) {
         return ChatClient.builder(model)
-                .defaultSystem(askAnswerSystemPrompt)
                 .defaultAdvisors(List.of(new SimpleLoggerAdvisor(),new TokenUsageAuditAdvisor()))
                 .build();
     }
@@ -90,7 +86,6 @@ public class AiConfig {
     ChatClient openAiChatClient(
             OpenAiChatModel model) {
         return ChatClient.builder(model)
-                .defaultSystem(askAnswerSystemPrompt)
                 .defaultAdvisors(new SimpleLoggerAdvisor())
                 .build();
     }

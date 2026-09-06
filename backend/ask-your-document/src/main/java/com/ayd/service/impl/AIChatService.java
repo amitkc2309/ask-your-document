@@ -2,7 +2,11 @@ package com.ayd.service.impl;
 
 import com.ayd.dto.ChatRequest;
 import com.ayd.dto.RerankedDocument;
+import com.ayd.entity.ChatSessions;
+import com.ayd.repository.ChatSessionRepository;
+import com.ayd.security.SecurityUtils;
 import com.ayd.service.*;
+import com.ayd.utils.GenericUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -20,6 +24,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,15 +44,19 @@ public class AIChatService {
     private final ReRankingService reRankingService;
     private final ChatClientFactory chatClientFactory;
     private final ChatOptionsFactory  chatOptionsFactory;
-    @Value("classpath:/templates/UserPromptTemplate.st")
-    Resource askAnswerUserPrompt;
+    @Value("classpath:/templates/SystemPromptTemplate.st")
+    Resource askAnswerSystemPrompt;
     @Value("${application.query-transform}")
     private Boolean queryTransform;
     private final VectorStore vectorStore;
     private final ChatMemory chatMemory;
+    private final ChatSessionRepository chatSessionRepository;
 
     public Flux<String> chat(ChatRequest request, String username) {
         String userQuery = request.getKeyword();
+        if (request.getConversationId() == null) {
+            throw new IllegalArgumentException("ChatSessionId is required");
+        }
         log.info("streamSearch username:{}", username);
         //Optimize the query using LLM. TODO
         if (queryTransform)
@@ -105,11 +114,11 @@ public class AIChatService {
                         advisorSpec
                                 .advisors(MessageChatMemoryAdvisor.builder(chatMemory)
                                         .build())
-                                .param(ChatMemory.CONVERSATION_ID, username))
-                .user(promptUserSpec ->
+                                .param(ChatMemory.CONVERSATION_ID, request.getConversationId()))
+                .user(finalUserQuery)
+                .system(promptUserSpec ->
                         promptUserSpec
-                                .text(askAnswerUserPrompt)
-                                .param("query", finalUserQuery)
+                                .text(askAnswerSystemPrompt)
                                 .param("context", context)
                 )
                 .stream()
@@ -122,5 +131,18 @@ public class AIChatService {
 
     public List<Message> getConversationById(String conversationId) {
         return chatMemory.get(conversationId);
+    }
+
+    public String createChatSessionForUser() {
+        ChatSessions chatSessions = new ChatSessions();
+        chatSessions.setUsername(SecurityUtils.getUsername());
+        UUID conservationId = UUID.randomUUID();
+        chatSessions.setConversationId(conservationId.toString());
+        chatSessionRepository.save(chatSessions);
+        return conservationId.toString();
+    }
+
+    public List<ChatSessions> getAllChatSessionsForUser() {
+        return chatSessionRepository.findAllByUsername(SecurityUtils.getUsername());
     }
 }

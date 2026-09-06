@@ -1,5 +1,0 @@
-Question:
-{query}
-
-Context:
-{context}
