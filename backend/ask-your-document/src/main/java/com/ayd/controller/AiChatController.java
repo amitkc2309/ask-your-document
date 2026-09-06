@@ -1,12 +1,20 @@
 package com.ayd.controller;
 
 import com.ayd.dto.ChatRequest;
+import com.ayd.dto.ChatSessionsDto;
 import com.ayd.security.SecurityUtils;
 import com.ayd.service.impl.AIChatService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.beans.BeanUtils;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/ai")
@@ -18,14 +26,35 @@ public class AiChatController {
     @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> stream(@RequestBody ChatRequest request) {
         String username = SecurityUtils.getUsername();
-        String conservationId = chatService.createChatSessionForUser();
-        request.setConversationId(conservationId);
         return chatService.chat(request, username);
     }
 
-  /*  @GetMapping(value = "/session")
-    public String getSession(@RequestBody ChatRequest request) {
-        String username = SecurityUtils.getUsername();
-        return chatService.chat(request, username);
-    }*/
+    @PostMapping(value = "/new-chat")
+    public ResponseEntity<String> createNewChatSessionForUser() {
+        String conservationId = chatService.createChatSessionForUser();
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(conservationId);
+    }
+
+    @GetMapping(value = "/all-conversations")
+    public List<ChatSessionsDto> getAllChatSessionsForUser() {
+        return chatService.getAllChatSessionsForUser()
+                .stream()
+                .map(session -> {
+                    ChatSessionsDto dto = new ChatSessionsDto();
+                    BeanUtils.copyProperties(session, dto);
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping(value = "/conversation/{conversationId}")
+    public List<Message> getConversationById(@PathVariable String conversationId) {
+        return chatService.getConversationById(conversationId);
+    }
+
+    @DeleteMapping("/conversation/{conversationId}")
+    public ResponseEntity<Void> deleteDocument(@PathVariable String conversationId) {
+        chatService.deleteConversationById(conversationId);
+        return ResponseEntity.ok().build();
+    }
 }

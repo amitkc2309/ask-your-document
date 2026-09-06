@@ -20,9 +20,13 @@ import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -53,10 +57,13 @@ public class AIChatService {
     private final ChatSessionRepository chatSessionRepository;
 
     public Flux<String> chat(ChatRequest request, String username) {
-        String userQuery = request.getKeyword();
+        if (username == null) {
+            throw new IllegalArgumentException("username can not be null");
+        }
         if (request.getConversationId() == null) {
             throw new IllegalArgumentException("ChatSessionId is required");
         }
+        String userQuery = request.getKeyword();
         log.info("streamSearch username:{}", username);
         //Optimize the query using LLM. TODO
         if (queryTransform)
@@ -133,16 +140,26 @@ public class AIChatService {
         return chatMemory.get(conversationId);
     }
 
+    @Transactional
     public String createChatSessionForUser() {
         ChatSessions chatSessions = new ChatSessions();
         chatSessions.setUsername(SecurityUtils.getUsername());
         UUID conservationId = UUID.randomUUID();
         chatSessions.setConversationId(conservationId.toString());
+        chatSessions.setTitle(
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm"))
+        );
         chatSessionRepository.save(chatSessions);
         return conservationId.toString();
     }
 
     public List<ChatSessions> getAllChatSessionsForUser() {
         return chatSessionRepository.findAllByUsername(SecurityUtils.getUsername());
+    }
+
+    @Transactional
+    public void deleteConversationById(String conversationId) {
+        chatMemory.clear(conversationId);
+        chatSessionRepository.deleteByConversationId(conversationId);
     }
 }

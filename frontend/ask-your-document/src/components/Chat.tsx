@@ -1,41 +1,261 @@
-import {useEffect, useState} from 'react';
-import {ChatBubbleLeftIcon, DocumentTextIcon} from '@heroicons/react/24/outline';
+import {useEffect, useState, useRef} from 'react';
+import {ChatBubbleLeftIcon, DocumentTextIcon, TrashIcon} from '@heroicons/react/24/outline';
 import config from '../config/config';
 import {getToken, updateToken} from "../keycloak.ts";
 import LayoutContainer from "./ui/LayoutContainer.tsx";
-import {SendHorizonalIcon} from "lucide-react";
+import {PanelLeftClose, PanelLeftOpen, PlusIcon, SendHorizonalIcon, Square} from "lucide-react";
 import {fetchAvailableModels} from "./FetchAvailableModels.tsx";
 
-const Chat = ({question, setQuestion, searchResults, setSearchResults}) => {
+import {
+    createNewChat,
+    getAllConversations,
+    getConversation,
+    deleteConversation
+} from './ChatApi.js';
+
+const Chat = ({
+                  question,
+                  setQuestion,
+                  searchResults,
+                  setSearchResults
+              }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
     const [availableModels, setAvailableModels] = useState({});
-    const [aiProvider, setAiProvider] = useState("");
-    const [modelName, setModelName] = useState("");
-    let cancelStreamRef = null;
+    const [aiProvider, setAiProvider] = useState('');
+    const [modelName, setModelName] = useState('');
+
+    const [conversations, setConversations] = useState([]);
+    const [conversationId, setConversationId] = useState(null);
+
+    const [messages, setMessages] = useState([]);
+
+    const [sidebarOpen, setSidebarOpen] = useState(true);
+
+    const abortControllerRef = useRef(null);
+    const messagesEndRef = useRef(null);
+
+    /*
+     * Load AI providers/models
+     */
     useEffect(() => {
         fetchAvailableModels()
             .then((models) => {
                 setAvailableModels(models);
+
                 const providers = Object.keys(models);
+
                 if (providers.length > 0) {
                     const defaultProvider = providers[0];
+
                     setAiProvider(defaultProvider);
-                    setModelName(models[defaultProvider][0]);
+
+                    setModelName(
+                        models[defaultProvider]?.[0] || ''
+                    );
                 }
             })
-            .catch(console.error);
+            .catch((err) => {
+                console.error(err);
+                setError('Failed to load AI models');
+            });
     }, []);
 
-    const handleSearch = async (e) => {
-        e.preventDefault();
-        if (!question.trim()) return;
+    /*
+     * Load user's conversations
+     */
+    useEffect(() => {
+        loadConversations();
+    }, []);
 
-        setLoading(true);
-        setError('');
-        setSearchResults({answer: '', snippets: []});
+    /*
+     * Scroll to bottom whenever messages change
+     */
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({
+            behavior: 'smooth'
+        });
+    }, [messages]);
+
+    const loadConversations = async () => {
+        try {
+            const data = await getAllConversations();
+
+            setConversations(data || []);
+        } catch (err) {
+            console.error(err);
+            setError('Failed to load conversations');
+        }
+    };
+
+    /*
+     * Start a completely new chat
+     */
+    const handleNewChat = async () => {
+        try {
+            // Stop any currently running stream
+            abortControllerRef.current?.abort();
+
+            setLoading(false);
+            setError('');
+
+            const newConversationId = await createNewChat();
+
+            setConversationId(newConversationId);
+
+            setMessages([]);
+
+            setQuestion('');
+
+            setSearchResults({
+                answer: '',
+                snippets: []
+            });
+
+            /*
+             * Refresh sidebar because the new conversation
+             * now exists in the backend.
+             */
+            await loadConversations();
+
+        } catch (err) {
+            console.error(err);
+            setError('Failed to create a new chat');
+        }
+    };
+
+    /*
+     * Open an existing conversation
+     */
+    const handleSelectConversation = async (id) => {
+        if (loading) {
+            return;
+        }
 
         try {
+            setError('');
+
+            const conversation = await getConversation(id);
+
+            setConversationId(id);
+
+            /*
+             * Backend:
+             *
+             * [
+             *   {
+             *     messageType: "USER",
+             *     text: "Ram Age?"
+             *   },
+             *   {
+             *     messageType: "ASSISTANT",
+             *     text: "21 years old."
+             *   }
+             * ]
+             */
+            setMessages(conversation || []);
+
+            setQuestion('');
+
+            setSearchResults({
+                answer: '',
+                snippets: []
+            });
+
+        } catch (err) {
+            console.error(err);
+            setError('Failed to load conversation');
+        }
+    };
+
+    /*
+     * Delete conversation
+     */
+    const handleDeleteConversation = async (id) => {
+        try {
+            await deleteConversation(id);
+
+            /*
+             * If deleting currently selected chat,
+             * clear the main window.
+             */
+            if (id === conversationId) {
+                setConversationId(null);
+                setMessages([]);
+                setQuestion('');
+            }
+
+            await loadConversations();
+
+        } catch (err) {
+            console.error(err);
+            setError('Failed to delete conversation');
+        }
+    };
+
+    /*
+     * Send message and stream AI response
+     */
+    const handleSearch = async (e) => {
+        e.preventDefault();
+
+        const text = question.trim();
+
+        if (!text || loading) {
+            return;
+        }
+
+        /*
+         * If there isn't a conversation yet,
+         * create one first.
+         */
+        let currentConversationId = conversationId;
+
+        try {
+            setError('');
+
+            if (!currentConversationId) {
+                currentConversationId = await createNewChat();
+
+                setConversationId(currentConversationId);
+
+                await loadConversations();
+            }
+
+            /*
+             * Immediately add USER message to UI.
+             */
+            const userMessage = {
+                messageType: 'USER',
+                text
+            };
+
+            setMessages((prev) => [
+                ...prev,
+                userMessage
+            ]);
+
+            setQuestion('');
+
+            setLoading(true);
+
+            /*
+             * Add empty AI message.
+             *
+             * We will update this as tokens arrive.
+             */
+            setMessages((prev) => [
+                ...prev,
+                {
+                    messageType: 'ASSISTANT',
+                    text: ''
+                }
+            ]);
+
+            /*
+             * Refresh token
+             */
             await new Promise((resolve) => {
                 updateToken(resolve);
             });
@@ -43,183 +263,630 @@ const Chat = ({question, setQuestion, searchResults, setSearchResults}) => {
             const token = getToken();
 
             const controller = new AbortController();
-            cancelStreamRef = () => controller.abort();
-            const response = await fetch(`${config.apiUrl}/ai/chat`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'text/event-stream',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    keyword: question,
-                    maxResults: 5,
-                    snippetLength: 200,
-                    aiRequest: {
-                        aiProvider: aiProvider,
-                        modelName: modelName
-                    }
-                }),
-                signal: controller.signal
-            });
+
+            abortControllerRef.current = controller;
+
+            const response = await fetch(
+                `${config.apiUrl}/ai/chat`,
+                {
+                    method: 'POST',
+
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'text/event-stream',
+                        'Authorization': `Bearer ${token}`
+                    },
+
+                    body: JSON.stringify({
+                        keyword: text,
+
+                        maxResults: 5,
+
+                        snippetLength: 200,
+
+                        conversationId: currentConversationId,
+
+                        aiRequest: {
+                            aiProvider,
+                            modelName
+                        }
+                    }),
+
+                    signal: controller.signal
+                }
+            );
 
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+                throw new Error(
+                    `HTTP ${response.status}`
+                );
             }
-            const reader = response.body.getReader();
-            if (!reader) throw new Error("No response body");
-            const decoder = new TextDecoder("utf-8");
+
+            if (!response.body) {
+                throw new Error(
+                    'No response body'
+                );
+            }
+
+            const reader =
+                response.body.getReader();
+
+            const decoder =
+                new TextDecoder('utf-8');
 
             let buffer = '';
             let aiText = '';
 
             while (true) {
-                const {done, value} = await reader.read();
-                if (done) break;
+                const {
+                    done,
+                    value
+                } = await reader.read();
 
-                buffer += decoder.decode(value, {stream: true});
+                if (done) {
+                    break;
+                }
 
-                const events = buffer.split("\n\n");
-                buffer = events.pop() || '';
+                buffer += decoder.decode(
+                    value,
+                    {
+                        stream: true
+                    }
+                );
 
-                for (let event of events) {
-                    let eventName = '';
-                    let data = '';
+                /*
+                 * SSE events are separated by
+                 * an empty line.
+                 */
+                const events =
+                    buffer.split(/\r?\n\r?\n/);
 
-                    const lines = event.split("\n");
+                buffer =
+                    events.pop() || '';
 
-                    for (let line of lines) {
-                        if (line.startsWith("event:")) {
-                            eventName = line.replace("event:", "").trim();
-                        }
-                        if (line.startsWith("data:")) {
-                            data += line.replace("data:", "");
+                for (const event of events) {
+
+                    const lines =
+                        event.split(/\r?\n/);
+
+                    const dataLines = [];
+
+                    for (const line of lines) {
+
+                        if (line.startsWith('data:')) {
+                            dataLines.push(
+                                line.substring(5)
+                                    .trimStart()
+                            );
                         }
                     }
-                        setLoading(false);
-                        aiText += data;
-                        setSearchResults(prev => ({...prev, answer: aiText}));
 
+                    const data =
+                        dataLines.join('\n');
+
+                    if (!data) {
+                        continue;
+                    }
+
+                    aiText += data;
+
+                    /*
+                     * Update the LAST message,
+                     * which is our assistant message.
+                     */
+                    setMessages((prev) => {
+
+                        if (prev.length === 0) {
+                            return prev;
+                        }
+
+                        const updated = [
+                            ...prev
+                        ];
+
+                        const lastIndex =
+                            updated.length - 1;
+
+                        updated[lastIndex] = {
+                            ...updated[lastIndex],
+                            text: aiText
+                        };
+
+                        return updated;
+                    });
                 }
             }
 
+            /*
+             * Refresh conversation list because
+             * its title / updated time may have changed.
+             */
+            await loadConversations();
+
         } catch (err) {
-            setError("Streaming failed");
+
+            if (err.name === 'AbortError') {
+
+                setMessages((prev) => {
+
+                    if (prev.length === 0) {
+                        return prev;
+                    }
+
+                    const updated = [
+                        ...prev
+                    ];
+
+                    const lastIndex =
+                        updated.length - 1;
+
+                    updated[lastIndex] = {
+                        ...updated[lastIndex],
+                        text:
+                            `${updated[lastIndex].text || ''}\n\n[Cancelled]`
+                    };
+
+                    return updated;
+                });
+
+            } else {
+
+                console.error(
+                    'Streaming failed:',
+                    err
+                );
+
+                setError(
+                    'Streaming failed'
+                );
+
+            }
+
+        } finally {
+
             setLoading(false);
+
+            abortControllerRef.current =
+                null;
         }
+    };
+
+    const handleCancel = () => {
+        abortControllerRef.current?.abort();
     };
 
     return (
         <LayoutContainer>
-            <div className="bg-accent/50 rounded-xl p-6 mb-8">
-                <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center">
-                        <h2 className="text-1xl font-bold text-foreground">
-                            Ask questions and get answers from all your documents.
-                        </h2>
-                    </div>
-                    <div className="flex items-end gap-3">
-                        <div>
-                            <label className="block text-sm font-medium text-muted-foreground mb-1">
-                                AI Provider
-                            </label>
+
+            <div className="flex h-[calc(100vh-120px)] min-h-[600px] bg-background border border-border rounded-xl overflow-hidden shadow-sm">
+
+                {/* =====================================================
+                    LEFT SIDEBAR
+                ====================================================== */}
+
+                {sidebarOpen && (
+                    <aside className="w-72 shrink-0 border-r border-border bg-muted/30 flex flex-col">
+
+                        {/* Sidebar header */}
+                        <div className="p-4 border-b border-border">
+
+                            <button
+                                onClick={handleNewChat}
+                                disabled={loading}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                            >
+                                <PlusIcon className="h-5 w-5" />
+
+                                New Chat
+                            </button>
+
+                        </div>
+
+                        {/* Conversations */}
+                        <div className="flex-1 overflow-y-auto p-3">
+
+                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
+                                Your Chats
+                            </div>
+
+                            {conversations.length === 0 && (
+                                <div className="px-2 py-6 text-sm text-muted-foreground text-center">
+                                    No conversations yet
+                                </div>
+                            )}
+
+                            <div className="space-y-1">
+
+                                {conversations.map((conversation) => {
+
+                                    /*
+                                     * Adjust these property names if
+                                     * your ChatSessionsDto uses different
+                                     * names.
+                                     */
+                                    const id =
+                                        conversation.id ||
+                                        conversation.conversationId;
+
+                                    const title =
+                                        conversation.title;
+
+                                    return (
+                                        <div
+                                            key={id}
+                                            className={`group flex items-center gap-2 rounded-lg ${
+                                                id === conversationId
+                                                    ? 'bg-accent'
+                                                    : 'hover:bg-accent/60'
+                                            }`}
+                                        >
+
+                                            <button
+                                                onClick={() =>
+                                                    handleSelectConversation(id)
+                                                }
+                                                className="flex-1 min-w-0 text-left px-3 py-3"
+                                            >
+
+                                                <div className="flex items-center gap-2">
+
+                                                    <ChatBubbleLeftIcon
+                                                        className="h-4 w-4 shrink-0 text-muted-foreground"
+                                                    />
+
+                                                    <span className="truncate text-sm text-foreground">
+                                                        {title}
+                                                    </span>
+
+                                                </div>
+
+                                            </button>
+
+                                            <button
+                                                onClick={() =>
+                                                    handleDeleteConversation(id)
+                                                }
+                                                disabled={loading}
+                                                className="mr-2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive disabled:opacity-30"
+                                                title="Delete conversation"
+                                            >
+                                                <TrashIcon className="h-4 w-4" />
+                                            </button>
+
+                                        </div>
+                                    );
+                                })}
+
+                            </div>
+
+                        </div>
+
+                    </aside>
+                )}
+
+                {/* =====================================================
+                    MAIN CHAT
+                ====================================================== */}
+
+                <main className="flex-1 flex flex-col min-w-0">
+
+                    {/* Chat header */}
+                    <div className="h-16 shrink-0 border-b border-border flex items-center justify-between px-5">
+
+                        <div className="flex items-center gap-3">
+
+                            <button
+                                onClick={() =>
+                                    setSidebarOpen((prev) => !prev)
+                                }
+                                className="p-2 rounded-lg hover:bg-accent"
+                                title={
+                                    sidebarOpen
+                                        ? 'Hide sidebar'
+                                        : 'Show sidebar'
+                                }
+                            >
+                                {sidebarOpen ? (
+                                    <PanelLeftClose className="h-5 w-5" />
+                                ) : (
+                                    <PanelLeftOpen className="h-5 w-5" />
+                                )}
+                            </button>
+
+                            <div>
+                                <h2 className="font-semibold text-foreground">
+                                    {conversationId
+                                        ? 'Chat'
+                                        : 'New Chat'}
+                                </h2>
+
+                                {conversationId && (
+                                    <p className="text-xs text-muted-foreground">
+                                        Conversation
+                                    </p>
+                                )}
+                            </div>
+
+                        </div>
+
+                        {/* Provider / Model */}
+                        <div className="flex items-center gap-2">
+
                             <select
                                 value={aiProvider}
+                                disabled={loading}
                                 onChange={(e) => {
-                                    const provider = e.target.value;
+
+                                    const provider =
+                                        e.target.value;
+
                                     setAiProvider(provider);
-                                    setModelName(availableModels[provider][0]);
+
+                                    setModelName(
+                                        availableModels[
+                                            provider
+                                            ]?.[0] || ''
+                                    );
                                 }}
-                                className="rounded-lg border border-input bg-background px-3 py-2 pr-8 shadow-sm text-foreground focus:ring-2 focus:ring-ring"
+                                className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground"
                             >
-                                {Object.keys(availableModels).map(provider => (
-                                    <option key={provider} value={provider}>
+
+                                {Object.keys(
+                                    availableModels
+                                ).map((provider) => (
+                                    <option
+                                        key={provider}
+                                        value={provider}
+                                    >
                                         {provider}
                                     </option>
                                 ))}
-                            </select>
-                        </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-muted-foreground mb-1">
-                                Model
-                            </label>
+                            </select>
+
                             <select
                                 value={modelName}
-                                onChange={(e) => setModelName(e.target.value)}
-                                className="rounded-lg border border-input bg-background px-3 py-2 pr-8 shadow-sm text-foreground focus:ring-2 focus:ring-ring"
+                                disabled={loading}
+                                onChange={(e) =>
+                                    setModelName(
+                                        e.target.value
+                                    )
+                                }
+                                className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground max-w-52"
                             >
-                                {(availableModels[aiProvider] || []).map(model => (
-                                    <option key={model} value={model}>
+
+                                {(
+                                    availableModels[
+                                        aiProvider
+                                        ] || []
+                                ).map((model) => (
+                                    <option
+                                        key={model}
+                                        value={model}
+                                    >
                                         {model}
                                     </option>
                                 ))}
+
                             </select>
+
                         </div>
+
                     </div>
-                </div>
-                <form onSubmit={handleSearch} className="relative">
-                    <div className="flex items-center gap-4">
-                        <div className="flex-1 relative">
-                            <input
-                                type="text"
-                                value={question}
-                                onChange={(e) => setQuestion(e.target.value)}
-                                placeholder="What would you like to know?"
-                                className="w-full pl-12 pr-4 py-3 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring shadow-sm"
-                            />
-                            <ChatBubbleLeftIcon
-                                className="h-6 w-6 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2"/>
+
+                    {/* =================================================
+                        MESSAGES
+                    ================================================== */}
+
+                    <div className="flex-1 overflow-y-auto">
+
+                        {messages.length === 0 ? (
+
+                            <div className="h-full flex items-center justify-center">
+
+                                <div className="text-center max-w-md px-6">
+
+                                    <div className="mx-auto mb-5 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+
+                                        <ChatBubbleLeftIcon
+                                            className="h-8 w-8 text-primary"
+                                        />
+
+                                    </div>
+
+                                    <h1 className="text-2xl font-bold text-foreground mb-2">
+                                        Ask your documents anything
+                                    </h1>
+
+                                    <p className="text-muted-foreground">
+                                        Ask questions about the documents
+                                        you've uploaded and get answers
+                                        powered by AI.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        ) : (
+
+                            <div className="max-w-4xl mx-auto w-full px-6 py-8 space-y-6">
+
+                                {messages.map(
+                                    (message, index) => {
+
+                                        const isUser =
+                                            message.messageType ===
+                                            'USER';
+
+                                        return (
+                                            <div
+                                                key={index}
+                                                className={`flex ${
+                                                    isUser
+                                                        ? 'justify-end'
+                                                        : 'justify-start'
+                                                }`}
+                                            >
+
+                                                <div
+                                                    className={`max-w-[80%] ${
+                                                        isUser
+                                                            ? 'items-end'
+                                                            : 'items-start'
+                                                    } flex flex-col`}
+                                                >
+
+                                                    <div
+                                                        className={`text-xs font-medium mb-1 ${
+                                                            isUser
+                                                                ? 'text-muted-foreground'
+                                                                : 'text-primary'
+                                                        }`}
+                                                    >
+                                                        {isUser
+                                                            ? 'You'
+                                                            : 'AI'}
+                                                    </div>
+
+                                                    <div
+                                                        className={`px-4 py-3 rounded-2xl whitespace-pre-wrap leading-relaxed ${
+                                                            isUser
+                                                                ? 'bg-primary text-primary-foreground rounded-br-md'
+                                                                : 'bg-muted text-foreground rounded-bl-md'
+                                                        }`}
+                                                    >
+                                                        {message.text}
+
+                                                        {/* Streaming cursor */}
+                                                        {!isUser &&
+                                                            loading &&
+                                                            index ===
+                                                            messages.length -
+                                                            1 && (
+                                                                <span className="inline-block w-2 h-4 ml-1 align-middle bg-current animate-pulse" />
+                                                            )}
+                                                    </div>
+
+                                                </div>
+
+                                            </div>
+                                        );
+                                    }
+                                )}
+
+                                <div ref={messagesEndRef} />
+
+                            </div>
+
+                        )}
+
+                    </div>
+
+                    {/* Error */}
+                    {error && (
+                        <div className="px-6">
+
+                            <div className="max-w-4xl mx-auto bg-destructive/10 border border-destructive/20 rounded-lg p-3 mb-3">
+
+                                <p className="text-sm text-destructive">
+                                    {error}
+                                </p>
+
+                            </div>
+
                         </div>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                    )}
+
+                    {/* =================================================
+                        INPUT
+                    ================================================== */}
+
+                    <div className="border-t border-border bg-background p-4">
+
+                        <form
+                            onSubmit={handleSearch}
+                            className="max-w-4xl mx-auto"
                         >
-                            <span className="mr-2">Chat</span>
-                            <SendHorizonalIcon/>
-                        </button>
+
+                            <div className="relative flex items-end gap-3">
+
+                                <div className="relative flex-1">
+
+                                    <textarea
+                                        value={question}
+                                        onChange={(e) =>
+                                            setQuestion(
+                                                e.target.value
+                                            )
+                                        }
+                                        onKeyDown={(e) => {
+
+                                            /*
+                                             * Enter = send
+                                             * Shift + Enter = newline
+                                             */
+                                            if (
+                                                e.key === 'Enter' &&
+                                                !e.shiftKey
+                                            ) {
+                                                e.preventDefault();
+
+                                                handleSearch(e);
+                                            }
+                                        }}
+                                        rows={1}
+                                        disabled={loading}
+                                        placeholder="Ask anything about your documents..."
+                                        className="w-full resize-none rounded-xl border border-input bg-background px-4 py-3 pr-12 text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                                    />
+
+                                </div>
+
+                                {loading ? (
+
+                                    <button
+                                        type="button"
+                                        onClick={handleCancel}
+                                        className="shrink-0 h-11 w-11 flex items-center justify-center rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        title="Stop generating"
+                                    >
+                                        <Square
+                                            className="h-4 w-4 fill-current"
+                                        />
+                                    </button>
+
+                                ) : (
+
+                                    <button
+                                        type="submit"
+                                        disabled={
+                                            !question.trim() ||
+                                            !aiProvider ||
+                                            !modelName
+                                        }
+                                        className="shrink-0 h-11 w-11 flex items-center justify-center rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        title="Send"
+                                    >
+                                        <SendHorizonalIcon className="h-5 w-5" />
+                                    </button>
+
+                                )}
+
+                            </div>
+
+                            <div className="text-center mt-2 text-xs text-muted-foreground">
+                                Enter to send · Shift + Enter for new line
+                            </div>
+
+                        </form>
+
                     </div>
-                </form>
+
+                </main>
+
             </div>
 
-            {loading && (
-                <div className="flex flex-col items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                    <p className="mt-4 text-muted-foreground">Searching through documents...</p>
-                </div>
-            )}
-
-            {loading && (
-                <button
-                    onClick={() => {
-                        cancelStreamRef && cancelStreamRef();
-                        setLoading(false);
-                        setSearchResults(prev => ({...prev, answer: prev?.answer + "\n\n[Cancelled]"}));
-                    }}
-                    className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg"
-                >
-                    Cancel
-                </button>
-            )}
-
-            {error && (
-                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
-                    <p className="text-destructive">{error}</p>
-                </div>
-            )}
-
-
-            {searchResults?.answer && (
-                <div className="bg-background border border-border rounded-xl p-6 shadow-sm">
-                    <h3 className="text-lg font-semibold mb-3 text-primary">
-                        🤖 AI Summary
-                    </h3>
-                    <p className="text-foreground whitespace-pre-line">
-                        {searchResults.answer}
-                    </p>
-                </div>
-            )}
         </LayoutContainer>
     );
 };
