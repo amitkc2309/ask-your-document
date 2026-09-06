@@ -44,6 +44,12 @@ spring:
           jdbc:
             initialize-schema: always
             schema: classpath:/schema/schema-postgresql.sql
+    vectorstore:
+      qdrant:
+        host: localhost
+        port: 6334
+        initialize-schema: true
+        collection-name: ask-your-document
 
   # Elasticsearch configuration
   elasticsearch:
@@ -127,14 +133,10 @@ application:
   reranker:
     reranker-url: http://localhost:8001
     minScoreThreshold: 0.1
-  elasticsearch:
-    index-name: documents-ai
-    index-name-nonai: documents
-    bm25-size: 30
-    vector-size: 30
-    vector-k: 30
-    vector-num-candidate: 60
-    rrf-limit: 15
+  vector-store:
+    top-k: 5
+    similarity-threshold: 0.1
+
 
 logging:
   level:

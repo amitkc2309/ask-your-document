@@ -1,7 +1,7 @@
 package com.ayd.service.impl;
 
 import com.ayd.dto.DocumentProcessingMessage;
-import com.ayd.entity.Document;
+import com.ayd.entity.UserDocument;
 import com.ayd.enums.ProcessingStatus;
 import com.ayd.entity.elasticsearch.DocumentIndex;
 import com.ayd.repository.DocumentRepository;
@@ -38,7 +38,7 @@ public class ElasticSearchDocumentProcessorServiceImpl implements DocumentProces
 
         try {
             // Get the document from the database
-            Document document = documentRepository.findById(message.getDocumentId())
+            UserDocument document = documentRepository.findById(message.getDocumentId())
                     .orElseThrow(() -> new RuntimeException("Document not found: " + message.getDocumentId()));
 
             // Update document status to PROCESSING
@@ -77,7 +77,7 @@ public class ElasticSearchDocumentProcessorServiceImpl implements DocumentProces
 
             try {
                 // Update document status to FAILED
-                Document document = documentRepository.findById(message.getDocumentId()).orElse(null);
+                UserDocument document = documentRepository.findById(message.getDocumentId()).orElse(null);
                 if (document != null) {
                     document.setProcessingStatus(ProcessingStatus.FAILED);
                     documentRepository.save(document);

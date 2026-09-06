@@ -1,11 +1,9 @@
 package com.ayd.service.impl;
 
-import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch.core.DeleteByQueryRequest;
-import com.ayd.config.ElasticSearchConfig;
 import com.ayd.service.DBServices;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
@@ -15,23 +13,14 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class VectorDBServices implements DBServices {
 
-    private final ElasticSearchConfig elasticSearchConfig;
-    private final ElasticsearchClient elasticSearchClient;
+    private final VectorStore vectorStore;
 
     @Override
     public void deleteByDocumentId(Long documentId) {
         try {
-            DeleteByQueryRequest request = new DeleteByQueryRequest.Builder()
-                    .index(elasticSearchConfig.getIndexName())
-                    .refresh(true)
-                    .query(q -> q
-                            .term(t -> t
-                                    .field("documentId")
-                                    .value(String.valueOf(documentId))
-                            )
-                    )
-                    .build();
-            elasticSearchClient.deleteByQuery(request);
+            vectorStore.delete(
+                    "documentId == '" + documentId + "'"
+            );
             log.info("Deleted all chunks for documentId={}", documentId);
 
         } catch (Exception e) {

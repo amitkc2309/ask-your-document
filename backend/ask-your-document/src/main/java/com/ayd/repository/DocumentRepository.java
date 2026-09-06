@@ -1,6 +1,6 @@
 package com.ayd.repository;
 
-import com.ayd.entity.Document;
+import com.ayd.entity.UserDocument;
 import com.ayd.enums.DocumentType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -8,21 +8,21 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface DocumentRepository extends JpaRepository<Document, Long> {
+public interface DocumentRepository extends JpaRepository<UserDocument, Long> {
 
     // Find documents by author
-    List<Document> findByAuthorContainingIgnoreCase(String author);
+    List<UserDocument> findByAuthorContainingIgnoreCase(String author);
 
-    List<Document> findByAuthorContainingIgnoreCaseAndUploadedBy(String author, String uploadedBy);
+    List<UserDocument> findByAuthorContainingIgnoreCaseAndUploadedBy(String author, String uploadedBy);
 
     // Find documents by title
-    List<Document> findByTitleContainingIgnoreCase(String title);
-    List<Document> findByTitleContainingIgnoreCaseAndUploadedBy(String title, String uploadedBy);
+    List<UserDocument> findByTitleContainingIgnoreCase(String title);
+    List<UserDocument> findByTitleContainingIgnoreCaseAndUploadedBy(String title, String uploadedBy);
 
     // Find documents by document type
-    List<Document> findByDocumentType(DocumentType documentType);
-    List<Document> findByDocumentTypeAndUploadedBy(DocumentType documentType, String uploadedBy);
+    List<UserDocument> findByDocumentType(DocumentType documentType);
+    List<UserDocument> findByDocumentTypeAndUploadedBy(DocumentType documentType, String uploadedBy);
 
     // Find documents by uploader
-    List<Document> findByUploadedBy(String uploadedBy);
+    List<UserDocument> findByUploadedBy(String uploadedBy);
 }

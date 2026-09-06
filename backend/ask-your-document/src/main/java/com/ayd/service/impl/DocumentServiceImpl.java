@@ -5,7 +5,7 @@ import com.ayd.config.MinioConfig;
 import com.ayd.dto.DocumentDTO;
 import com.ayd.dto.DocumentProcessingMessage;
 import com.ayd.dto.DocumentStatusEvent;
-import com.ayd.entity.Document;
+import com.ayd.entity.UserDocument;
 import com.ayd.enums.DocumentStatus;
 import com.ayd.enums.DocumentType;
 import com.ayd.enums.ProcessingStatus;
@@ -24,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -48,7 +47,7 @@ public class DocumentServiceImpl implements DocumentService {
         // Determine document type
         DocumentType documentType = determineDocumentType(file.getOriginalFilename());
         // Create document entity with PENDING status
-        Document document = Document.builder()
+        UserDocument document = UserDocument.builder()
                 .title(title)
                 .fileName(file.getOriginalFilename())
                 .contentType(file.getContentType())
@@ -61,7 +60,7 @@ public class DocumentServiceImpl implements DocumentService {
                 .build();
 
         // Save document metadata to get an ID
-        Document savedDocument = documentRepository.save(document);
+        UserDocument savedDocument = documentRepository.save(document);
         String objectId = username + minioConfig.getMinioFileDelimiter() + savedDocument.getId();
         documentStatusPublisher.publish(new DocumentStatusEvent(savedDocument.getId(), username, DocumentStatus.UPLOADING));
         // Store the file in the file system
@@ -106,7 +105,7 @@ public class DocumentServiceImpl implements DocumentService {
     @Transactional(readOnly = true)
     public DocumentDTO getDocumentById(Long id) {
         log.debug("Fetching document by ID: {}", id);
-        Document document = documentRepository.findById(id)
+        UserDocument document = documentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Document", "id", id));
         String username = SecurityUtils.getUsername();
         if (!document.getUploadedBy().equals(username)) {
@@ -119,7 +118,7 @@ public class DocumentServiceImpl implements DocumentService {
     @Transactional
     public void deleteDocument(Long id, String username) {
         log.info("Deleting document. ID: {}, Username: {}", id, username);
-        Document document = documentRepository.findById(id)
+        UserDocument document = documentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Document", "id", id));
         if (!document.getUploadedBy().equals(username)) {
             throw new ActionNotPermittedException(username, "Document", id);
@@ -175,7 +174,7 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
 
-    private DocumentDTO mapToDTO(Document document) {
+    private DocumentDTO mapToDTO(UserDocument document) {
         return DocumentDTO.builder()
                 .id(document.getId())
                 .title(document.getTitle())

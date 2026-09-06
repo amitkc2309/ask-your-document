@@ -1,6 +1,6 @@
 package com.ayd.service;
 
-import com.ayd.entity.Document;
+import com.ayd.entity.UserDocument;
 import lombok.RequiredArgsConstructor;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
@@ -11,7 +11,6 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -26,7 +25,7 @@ public class TextExtractionService {
 
     private final StorageService storageService;
 
-    public String extractTextFromFile(Document document) throws IOException {
+    public String extractTextFromFile(UserDocument document) throws IOException {
         String fileName = document.getFileName();
         if (document.getFilePath() == null) {
             return "";

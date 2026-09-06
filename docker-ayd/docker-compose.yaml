@@ -113,7 +113,6 @@ services:
       - minio_data:/data
 
   ayd-qdrant:
-    profiles: ["ai"]
     image: qdrant/qdrant:latest
     container_name: ayd-qdrant
     ports:

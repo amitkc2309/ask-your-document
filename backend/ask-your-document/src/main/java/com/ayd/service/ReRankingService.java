@@ -33,7 +33,7 @@ public class ReRankingService {
         }
         List<RerankRequestItem> items = documents.stream()
                 .map(d -> new RerankRequestItem(
-                        (String) d.getMetadata().get("chunkId"),
+                        d.getId(),
                         d.getText()
                 ))
                 .toList();
@@ -54,7 +54,7 @@ public class ReRankingService {
         }
         Map<String, Document> docMap = documents.stream()
                 .collect(Collectors.toMap(
-                        d -> (String) d.getMetadata().get("chunkId"),
+                        d -> d.getId(),
                         d -> d
                 ));
 
