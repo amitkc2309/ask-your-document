@@ -113,9 +113,6 @@ function App() {
             `${appconfig.apiUrl}/manage/documents/${documentId}/events`,
             {
                 signal: controller.signal,
-                headers: {
-                    Authorization: `Bearer ${getToken()}`
-                },
                 onmessage(event) {
                     console.log("******")
                     const status = JSON.parse(event.data);

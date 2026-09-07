@@ -11,7 +11,7 @@ import {
     getAllConversations,
     getConversation,
     deleteConversation
-} from './ChatApi.js';
+} from './ChatApi.tsx';
 
 const Chat = ({
                   question,
@@ -279,13 +279,9 @@ const Chat = ({
 
                     body: JSON.stringify({
                         keyword: text,
-
                         maxResults: 5,
-
                         snippetLength: 200,
-
                         conversationId: currentConversationId,
-
                         aiRequest: {
                             aiProvider,
                             modelName
@@ -308,15 +304,10 @@ const Chat = ({
                 );
             }
 
-            const reader =
-                response.body.getReader();
-
-            const decoder =
-                new TextDecoder('utf-8');
-
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder('utf-8');
             let buffer = '';
             let aiText = '';
-
             while (true) {
                 const {
                     done,
@@ -338,38 +329,23 @@ const Chat = ({
                  * SSE events are separated by
                  * an empty line.
                  */
-                const events =
-                    buffer.split(/\r?\n\r?\n/);
-
-                buffer =
-                    events.pop() || '';
-
+                const events = buffer.split(/\r?\n\r?\n/);
+                buffer = events.pop() || '';
                 for (const event of events) {
-
-                    const lines =
-                        event.split(/\r?\n/);
-
+                    const lines = event.split(/\r?\n/);
                     const dataLines = [];
-
                     for (const line of lines) {
-
                         if (line.startsWith('data:')) {
                             dataLines.push(
                                 line.substring(5)
-                                    .trimStart()
                             );
                         }
                     }
-
-                    const data =
-                        dataLines.join('\n');
-
+                    const data = dataLines.join('\n');
                     if (!data) {
                         continue;
                     }
-
                     aiText += data;
-
                     /*
                      * Update the LAST message,
                      * which is our assistant message.
@@ -391,7 +367,6 @@ const Chat = ({
                             ...updated[lastIndex],
                             text: aiText
                         };
-
                         return updated;
                     });
                 }
@@ -746,7 +721,7 @@ const Chat = ({
                                                     >
                                                         {isUser
                                                             ? 'You'
-                                                            : 'AI'}
+                                                            : '🤖'}
                                                     </div>
 
                                                     <div
