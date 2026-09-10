@@ -13,7 +13,7 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ResourceCache {
+public class KeycloakResources {
 
     private final KeycloakResourceLoader loader;
     private Map<String, String> resourceMap = new HashMap<>();
@@ -48,7 +48,7 @@ public class ResourceCache {
     }
 
 
-    public String getServiceToken() {
+    private String getServiceToken() {
         String url = keycloakUrlProvider.getTokenUrl();
         String body = "grant_type=client_credentials"
                 + "&client_id="+keycloakUrlProvider.getClientId()

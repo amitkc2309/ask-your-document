@@ -18,7 +18,7 @@ import java.io.IOException;
 public class KeycloakAuthFilter extends OncePerRequestFilter {
 
     private final KeycloakPolicyEnforcer enforcer;
-    private final ResourceCache resourceCache;
+    private final KeycloakResources keycloakResources;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -34,7 +34,7 @@ public class KeycloakAuthFilter extends OncePerRequestFilter {
         }
         String token = jwtAuth.getToken().getTokenValue();
         // Map request → resource
-        String resource = resourceCache.getResource(request.getRequestURI());
+        String resource = keycloakResources.getResource(request.getRequestURI());
         // Map method → scope
         String scope = request.getMethod(); // GET, POST, DELETE
         // Ask Keycloak
