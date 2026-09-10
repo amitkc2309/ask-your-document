@@ -9,8 +9,6 @@ import org.springframework.ai.ollama.OllamaEmbeddingModel;
 import org.springframework.ai.ollama.api.OllamaApi;
 import org.springframework.ai.ollama.api.OllamaEmbeddingOptions;
 import org.springframework.ai.ollama.management.ModelManagementOptions;
-import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
-import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,7 +20,7 @@ import java.util.List;
 @Configuration
 public class AiConfig {
 
-    @Value("${spring.ai.ollama.embedding.options.model}")
+    @Value("${spring.ai.ollama.embedding.model}")
     public String embeddingModelName;
 
     @Value("${application.chat-memory-max-messages}")

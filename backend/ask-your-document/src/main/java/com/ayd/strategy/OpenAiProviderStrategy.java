@@ -37,10 +37,9 @@ public class OpenAiProviderStrategy implements AiProviderStrategy {
     }
 
     @Override
-    public ChatOptions getChatOptions(AiRequest aiRequest) {
+    public ChatOptions.Builder getChatOptionsBuilder(AiRequest aiRequest) {
         return OpenAiChatOptions.builder()
-                .model(aiRequest.getModelName())
-                .build();
+                .model(aiRequest.getModelName());
     }
 
     @Override

@@ -1,7 +1,7 @@
 package com.ayd.service;
 
 import com.ayd.dto.DocumentStatusEvent;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class DocumentStatusSubscriber implements MessageListener {
 
-    private final ObjectMapper mapper;
+    private final JsonMapper mapper;
     private final NotificationHub notificationHub;
 
     @Override

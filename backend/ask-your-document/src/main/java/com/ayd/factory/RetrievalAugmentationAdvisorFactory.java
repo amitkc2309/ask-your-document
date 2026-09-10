@@ -26,10 +26,9 @@ public class RetrievalAugmentationAdvisorFactory {
     public RetrievalAugmentationAdvisor createRetrievalAdvisor(
             ChatModel chatModel,
             String requestedModelName) {
-        ChatOptions options = ChatOptions.builder()
+        ChatOptions.Builder options = ChatOptions.builder()
                 .model(requestedModelName)
-                .temperature(0.0)
-                .build();
+                .temperature(0.4);
         ChatClient.Builder compressionClientBuilder = ChatClient.builder(chatModel)
                 .defaultOptions(options);
         CompressionQueryTransformer queryTransformer = CompressionQueryTransformer.builder()

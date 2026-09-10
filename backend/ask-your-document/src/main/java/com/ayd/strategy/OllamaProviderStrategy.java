@@ -40,12 +40,11 @@ public class OllamaProviderStrategy implements AiProviderStrategy {
     }
 
     @Override
-    public ChatOptions getChatOptions(AiRequest aiRequest) {
+    public ChatOptions.Builder getChatOptionsBuilder(AiRequest aiRequest) {
         return OllamaChatOptions.builder()
                 .model(aiRequest.getModelName())
                 .temperature(0.7)
-                .disableThinking()
-                .build();
+                .disableThinking();
     }
 
     @Override

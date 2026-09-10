@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.14</version>
+        <version>4.1.1</version>
         <relativePath/>
     </parent>
     <groupId>com</groupId>
@@ -15,7 +15,7 @@
     <description>Management of Documents</description>
     <properties>
         <java.version>21</java.version>
-        <spring-ai.version>1.1.5</spring-ai.version>
+        <spring-ai.version>2.0.1</spring-ai.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -50,8 +50,8 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.kafka</groupId>
-            <artifactId>spring-kafka</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-kafka</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -85,26 +85,10 @@
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-tika-document-reader</artifactId>
         </dependency>
-<!--		<dependency>-->
-<!--			<groupId>org.flywaydb</groupId>-->
-<!--			<artifactId>flyway-core</artifactId>-->
-<!--		</dependency>-->
-<!--		<dependency>-->
-<!--			<groupId>org.flywaydb</groupId>-->
-<!--			<artifactId>flyway-database-postgresql</artifactId>-->
-<!--		</dependency>-->
-        <!-- S3 replacement -->
         <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
             <version>8.5.12</version>
-        </dependency>
-
-        <!-- Apache POI for document processing -->
-        <dependency>
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi</artifactId>
-            <version>5.2.5</version>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>

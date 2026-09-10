@@ -5,6 +5,7 @@ import com.ayd.dto.ChatSessionsDto;
 import com.ayd.security.SecurityUtils;
 import com.ayd.service.impl.AIChatService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.java.Log;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/ai")
 @RequiredArgsConstructor
+@Log
 public class AiChatController {
 
     private final AIChatService chatService;
@@ -26,7 +28,9 @@ public class AiChatController {
     @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> stream(@RequestBody ChatRequest request) {
         String username = SecurityUtils.getUsername();
-        return chatService.chat(request, username);
+        return chatService.chat(request, username).doOnNext(answer -> {
+            log.info("***answer"+answer);
+        });
     }
 
     @PostMapping(value = "/new-chat")

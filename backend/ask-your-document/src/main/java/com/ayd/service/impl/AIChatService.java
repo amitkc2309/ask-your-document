@@ -53,8 +53,9 @@ public class AIChatService {
         AiProviderStrategy aiProviderStrategy = aiProviderFactory.getStrategy(request.getAiRequest().getAiProvider());
         RetrievalAugmentationAdvisor ragAdvisor = ragAdvisorFactory
                 .createRetrievalAdvisor(aiProviderStrategy.getChatModel(), request.getAiRequest().getModelName());
+
         return aiProviderStrategy.getChatClient().prompt()
-                .options(aiProviderStrategy.getChatOptions(request.getAiRequest()))
+                .options(aiProviderStrategy.getChatOptionsBuilder(request.getAiRequest()))
                 .advisors(advisorSpec ->
                         advisorSpec
                                 .advisors(MessageChatMemoryAdvisor.builder(chatMemory).build(),
