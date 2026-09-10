@@ -1,6 +1,8 @@
 package com.ayd.config;
 
 import io.micrometer.observation.ObservationRegistry;
+import org.springframework.ai.chat.cache.semantic.SemanticCache;
+import org.springframework.ai.chat.cache.semantic.SemanticCacheAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.memory.repository.jdbc.JdbcChatMemoryRepository;
@@ -11,9 +13,12 @@ import org.springframework.ai.ollama.api.OllamaEmbeddingOptions;
 import org.springframework.ai.ollama.management.ModelManagementOptions;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
+import org.springframework.ai.vectorstore.redis.cache.semantic.DefaultSemanticCache;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import redis.clients.jedis.RedisClient;
 
 import java.util.List;
 
@@ -26,6 +31,11 @@ public class AiConfig {
     @Value("${application.chat-memory-max-messages}")
     public int chatMemoryMaxMessage;
 
+    @Value("${spring.data.redis.host}")
+    public String redisHost;
+
+    @Value("${spring.data.redis.port}")
+    public int redisPort;
 
     @Bean
     public EmbeddingModel embeddingModel(OllamaApi ollamaApi, ObservationRegistry observationRegistry) {
@@ -48,6 +58,13 @@ public class AiConfig {
     ChatMemory chatMemory(JdbcChatMemoryRepository  repository) {
         return MessageWindowChatMemory.builder().maxMessages(chatMemoryMaxMessage)
                 .chatMemoryRepository(repository).build();
+    }
+
+    @Bean("semanticCacheRedisClient")
+    RedisClient semanticCacheRedisClient(){
+        return RedisClient.builder()
+                .hostAndPort(redisHost, redisPort)
+                .build();
     }
 
     @Bean

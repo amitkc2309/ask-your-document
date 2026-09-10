@@ -4,11 +4,13 @@ import com.ayd.dto.ChatRequest;
 import com.ayd.entity.ChatSessions;
 import com.ayd.factory.AiProviderFactory;
 import com.ayd.factory.RetrievalAugmentationAdvisorFactory;
+import com.ayd.factory.SemanticCacheAdvisorFactory;
 import com.ayd.repository.ChatSessionRepository;
 import com.ayd.security.SecurityUtils;
 import com.ayd.strategy.AiProviderStrategy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.cache.semantic.SemanticCacheAdvisor;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.Message;
@@ -33,6 +35,7 @@ public class AIChatService {
     private final RetrievalAugmentationAdvisorFactory ragAdvisorFactory;
     private final ChatMemory chatMemory;
     private final ChatSessionRepository chatSessionRepository;
+    private final SemanticCacheAdvisorFactory semanticCacheAdvisorFactory;
 
     public Flux<String> chat(ChatRequest request, String username) {
         if (username == null) {
@@ -54,11 +57,16 @@ public class AIChatService {
         RetrievalAugmentationAdvisor ragAdvisor = ragAdvisorFactory
                 .createRetrievalAdvisor(aiProviderStrategy.getChatModel(), request.getAiRequest().getModelName());
 
+        SemanticCacheAdvisor semanticCacheAdvisor = semanticCacheAdvisorFactory.createSemanticCacheAdvisor(username);
+
         return aiProviderStrategy.getChatClient().prompt()
                 .options(aiProviderStrategy.getChatOptionsBuilder(request.getAiRequest()))
                 .advisors(advisorSpec ->
                         advisorSpec
-                                .advisors(MessageChatMemoryAdvisor.builder(chatMemory).build(),
+                                .advisors(
+                                        //Just Uncomment to use cache
+                                        //semanticCacheAdvisor,
+                                        MessageChatMemoryAdvisor.builder(chatMemory).build(),
                                         ragAdvisor)
                                 .param(ChatMemory.CONVERSATION_ID, request.getConversationId())
                                 .param(VectorStoreDocumentRetriever.FILTER_EXPRESSION, vectorDBSearchFilter))

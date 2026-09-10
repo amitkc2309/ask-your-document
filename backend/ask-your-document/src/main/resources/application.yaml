@@ -132,6 +132,8 @@ application:
   vector-store:
     top-k: 5
     similarity-threshold: 0.2
+  semantic-cache:
+    similarity-threshold: 0.9
 
 
 logging:
