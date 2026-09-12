@@ -17,6 +17,6 @@ public class ChatSessions {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String title;
-    private String username;
+    private String userId;
     private String conversationId;
 }

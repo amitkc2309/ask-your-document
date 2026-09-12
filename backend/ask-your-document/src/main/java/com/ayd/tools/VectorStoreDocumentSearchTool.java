@@ -37,15 +37,15 @@ public class VectorStoreDocumentSearchTool {
                                              String semanticSearchQuery,
                                          ToolContext toolContext) {
         log.info("Searching for documents using semanticSearchQuery=>"+semanticSearchQuery);
-        String username = (String) toolContext.getContext().get("username");
-        if (username == null || username.isBlank()) {
-            throw new IllegalStateException("Missing username in tool context — refusing to search");
+        String userId = (String) toolContext.getContext().get("userId");
+        if (userId == null || userId.isBlank()) {
+            throw new IllegalStateException("Missing userId in tool context — refusing to search");
         }
-        log.info("username during vector_db_search tool: " + username);
+        log.info("userId during vector_db_search tool: " + userId);
         Filter.Expression vectorDBSearchFilter = new Filter.Expression(
                 Filter.ExpressionType.EQ,
                 new Filter.Key("uploadedBy"),
-                new Filter.Value(username)
+                new Filter.Value(userId)
         );
         SearchRequest sr = SearchRequest.builder()
                 .query(semanticSearchQuery)

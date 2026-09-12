@@ -20,27 +20,14 @@ public class SecurityUtils {
     }
 
     /**
-     * Get the authenticated username from the security context.
+     * Get the authenticated userId from the security context.
      *
-     * @return the username or null if not authenticated
+     * @return the userId or null if not authenticated
      */
-    public static String getUsername() {
+    public static String getUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
             return authentication.getName();
-        }
-        return null;
-    }
-
-    /**
-     * Get the authenticated user ID from the Jwt token.
-     *
-     * @return the user ID or null if not authenticated or ID not present
-     */
-    public static String getUserId() {
-        Jwt jwt = getJwt();
-        if (jwt != null) {
-            return jwt.getClaimAsString("sub");
         }
         return null;
     }

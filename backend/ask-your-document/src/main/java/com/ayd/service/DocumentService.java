@@ -13,10 +13,10 @@ public interface DocumentService {
      * @param file The document file
      * @param title Document title
      * @param author Document author
-     * @param username Username of the uploader
+     * @param userId userId of the uploader
      * @return The uploaded document details
      */
-    DocumentDTO uploadDocument(MultipartFile file, String title, String author, String username);
+    DocumentDTO uploadDocument(MultipartFile file, String title, String author, String userId);
     
     /**
      * Get a document by ID
@@ -28,9 +28,9 @@ public interface DocumentService {
     /**
      * Delete a document by ID
      * @param id Document ID
-     * @param username Username of the requester (for authorization)
+     * @param userId of the requester (for authorization)
      */
-    void deleteDocument(Long id, String username);
+    void deleteDocument(Long id, String userId);
     
     /**
      * Search documents by author

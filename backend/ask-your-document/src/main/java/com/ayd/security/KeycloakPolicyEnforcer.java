@@ -16,8 +16,8 @@ public class KeycloakPolicyEnforcer {
     private final KeycloakPolicyCacheService keycloakPolicyCacheService;
 
     public boolean isAllowed(String token, String resource, String scope) {
-        String username = SecurityUtils.getUsername();
-        String cacheKey = buildCacheKey(username, resource, scope);
+        String userId = SecurityUtils.getUserId();
+        String cacheKey = buildCacheKey(userId, resource, scope);
         Boolean cached = keycloakPolicyCacheService.get(cacheKey);
         if (cached != null) {
             return cached;
@@ -42,8 +42,8 @@ public class KeycloakPolicyEnforcer {
         }
     }
 
-    private String buildCacheKey(String username, String resource, String scope) {
+    private String buildCacheKey(String userId, String resource, String scope) {
         String version = keycloakPolicyCacheService.getPolicyVersion();
-        return "kc_policy"+":"+username + ":" + resource + ":" + scope + ":" + version;
+        return "kc_policy"+":"+userId + ":" + resource + ":" + scope + ":" + version;
     }
 }

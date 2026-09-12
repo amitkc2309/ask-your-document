@@ -25,20 +25,20 @@ public class SemanticCacheAdvisorFactory {
     @Value("${application.semantic-cache.similarity-threshold}")
     private Double semanticCacheSimilarityThreshold;
 
-    public SemanticCacheAdvisor createSemanticCacheAdvisor(String username) {
-        if (username == null) {
-            throw new IllegalArgumentException("username can not be null");
+    public SemanticCacheAdvisor createSemanticCacheAdvisor(String userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("userId can not be null");
         }
         return SemanticCacheAdvisor.builder()
-                .cache(semanticCache(username))
+                .cache(semanticCache(userId))
                 .build();
 
     }
 
-    private SemanticCache semanticCache(String username) {
-        log.info("**********semanticCache  start**********"+username);
-        String indexName = username + "-semantic-cache";
-        String prefix = "ayd-semantic-cache:" + username + ":";
+    private SemanticCache semanticCache(String userId) {
+        log.info("**********semanticCache  start**********"+userId);
+        String indexName = userId + "-semantic-cache";
+        String prefix = "ayd-semantic-cache:" + userId + ":";
         return DefaultSemanticCache.builder()
                 .jedisClient(semanticCacheRedisClient)
                 .embeddingModel(embeddingModel)

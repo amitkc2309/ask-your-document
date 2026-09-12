@@ -38,7 +38,7 @@ public class DocumentController {
             @RequestParam("title") String title,
             @RequestParam("author") String author) {
 
-        DocumentDTO dto = documentService.uploadDocument(file, title, author, SecurityUtils.getUsername());
+        DocumentDTO dto = documentService.uploadDocument(file, title, author, SecurityUtils.getUserId());
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(dto);
     }
 
@@ -62,7 +62,7 @@ public class DocumentController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteDocument(@PathVariable Long id) {
-        documentService.deleteDocument(id, SecurityUtils.getUsername());
+        documentService.deleteDocument(id, SecurityUtils.getUserId());
         return ResponseEntity.ok().build();
     }
 

@@ -8,6 +8,6 @@ import lombok.Data;
 @AllArgsConstructor
 public class DocumentStatusEvent {
     private Long documentId;
-    private String username;
+    private String userId;
     private DocumentStatus documentStatus;
 }

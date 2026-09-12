@@ -33,24 +33,24 @@ public class AIChatService {
     private final AiProviderFactory aiProviderFactory;
     private final VectorStoreDocumentSearchTool vectorDocumentSearchTool;
 
-    public Flux<String> chat(ChatRequest request, String username) {
-        if (username == null) {
-            throw new IllegalArgumentException("username can not be null");
+    public Flux<String> chat(ChatRequest request, String userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("userId can not be null");
         }
         if (request.getConversationId() == null) {
             throw new IllegalArgumentException("ChatSessionId is required");
         }
-        //TODO Security: validate ConversationId belongs to username
+        //TODO Security: validate ConversationId belongs to userId
         String userQuery = request.getKeyword();
-        log.info("streamSearch username:"+ username);
+        log.info("streamSearch userId:"+ userId);
         long aiStartTime = System.currentTimeMillis();
         AiProviderStrategy aiProviderStrategy = aiProviderFactory.getStrategy(request.getAiRequest().getAiProvider());
-        //SemanticCacheAdvisor semanticCacheAdvisor = semanticCacheAdvisorFactory.createSemanticCacheAdvisor(username);
+        //SemanticCacheAdvisor semanticCacheAdvisor = semanticCacheAdvisorFactory.createSemanticCacheAdvisor(userId);
 
         return aiProviderStrategy.getChatClient().prompt()
                 .options(aiProviderStrategy.getChatOptionsBuilder(request.getAiRequest()))
                 .tools(vectorDocumentSearchTool)
-                .toolContext(Map.of("username", username))
+                .toolContext(Map.of("userId", userId))
                 .advisors(advisorSpec ->
                         advisorSpec
                                 .advisors(
@@ -76,7 +76,7 @@ public class AIChatService {
     @Transactional
     public String createChatSessionForUser() {
         ChatSessions chatSessions = new ChatSessions();
-        chatSessions.setUsername(SecurityUtils.getUsername());
+        chatSessions.setUserId(SecurityUtils.getUserId());
         UUID conservationId = UUID.randomUUID();
         chatSessions.setConversationId(conservationId.toString());
         chatSessions.setTitle(
@@ -87,7 +87,7 @@ public class AIChatService {
     }
 
     public List<ChatSessions> getAllChatSessionsForUser() {
-        return chatSessionRepository.findAllByUsername(SecurityUtils.getUsername());
+        return chatSessionRepository.findAllByUserId(SecurityUtils.getUserId());
     }
 
     @Transactional

@@ -27,8 +27,8 @@ public class AiChatController {
 
     @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> stream(@RequestBody ChatRequest request) {
-        String username = SecurityUtils.getUsername();
-        return chatService.chat(request, username);
+        String userId = SecurityUtils.getUserId();
+        return chatService.chat(request, userId);
     }
 
     @PostMapping(value = "/new-chat")
