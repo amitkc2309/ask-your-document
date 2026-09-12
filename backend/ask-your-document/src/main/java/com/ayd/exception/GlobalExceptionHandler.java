@@ -40,10 +40,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ActionNotPermittedException.class)
     public ResponseEntity<ErrorResponse> handleActionNotPermittedException(
-            ResourceNotFoundException ex, HttpServletRequest request) {
-
+            ActionNotPermittedException ex, HttpServletRequest request) {
         log.error("Action not Permitted exception: {}", ex.getMessage());
-
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .status(HttpStatus.UNAUTHORIZED.value())
                 .error(HttpStatus.UNAUTHORIZED.getReasonPhrase())
@@ -51,7 +49,6 @@ public class GlobalExceptionHandler {
                 .path(request.getRequestURI())
                 .timestamp(LocalDateTime.now())
                 .build();
-
         return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
     }
     
@@ -230,6 +227,19 @@ public class GlobalExceptionHandler {
                 .build();
         
         return new ResponseEntity<>(errorResponse, HttpStatus.PAYLOAD_TOO_LARGE);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
+            IllegalArgumentException ex, HttpServletRequest request) {
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .timestamp(LocalDateTime.now())
+                .build();
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
     
     @ExceptionHandler(Exception.class)

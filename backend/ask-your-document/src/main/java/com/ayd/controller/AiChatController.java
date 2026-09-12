@@ -55,7 +55,7 @@ public class AiChatController {
     }
 
     @DeleteMapping("/conversation/{conversationId}")
-    public ResponseEntity<Void> deleteDocument(@PathVariable String conversationId) {
+    public ResponseEntity<Void> deleteConversation(@PathVariable String conversationId) {
         chatService.deleteConversationById(conversationId);
         return ResponseEntity.ok().build();
     }

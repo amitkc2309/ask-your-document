@@ -278,7 +278,7 @@ const Chat = ({
                     },
 
                     body: JSON.stringify({
-                        keyword: text,
+                        userMessage: text,
                         maxResults: 5,
                         snippetLength: 200,
                         conversationId: currentConversationId,

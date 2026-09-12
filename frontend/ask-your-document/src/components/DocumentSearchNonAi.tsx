@@ -17,7 +17,7 @@ const DocumentSearch = ({ question, setQuestion, searchResults, setSearchResults
 
         try {
             const response = await api.post(`${config.apiUrl}/manage/search/docs`, {
-                keyword: question,
+                userMessage: question,
                 maxResults: 5,
                 snippetLength: 200
             });

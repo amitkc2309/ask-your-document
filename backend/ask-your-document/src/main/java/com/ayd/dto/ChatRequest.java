@@ -12,8 +12,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ChatRequest {
     
-    @NotBlank(message = "Question is required")
-    private String keyword;
+    @NotBlank(message = "User Message is required")
+    private String userMessage;
     
     private Integer maxResults = 5;
     

@@ -5,6 +5,7 @@ import com.ayd.entity.ChatSessions;
 import com.ayd.factory.AiProviderFactory;
 import com.ayd.repository.ChatSessionRepository;
 import com.ayd.security.SecurityUtils;
+import com.ayd.service.ConversationAccessService;
 import com.ayd.strategy.AiProviderStrategy;
 import com.ayd.tools.VectorStoreDocumentSearchTool;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class AIChatService {
     //private final SemanticCacheAdvisorFactory semanticCacheAdvisorFactory;
     private final AiProviderFactory aiProviderFactory;
     private final VectorStoreDocumentSearchTool vectorDocumentSearchTool;
+    private final ConversationAccessService conversationAccessService;
 
     public Flux<String> chat(ChatRequest request, String userId) {
         if (userId == null) {
@@ -40,8 +42,8 @@ public class AIChatService {
         if (request.getConversationId() == null) {
             throw new IllegalArgumentException("ChatSessionId is required");
         }
-        //TODO Security: validate ConversationId belongs to userId
-        String userQuery = request.getKeyword();
+        conversationAccessService.validateConversationAccess(request.getConversationId(), userId);
+        String userQuery = request.getUserMessage();
         log.info("streamSearch userId:"+ userId);
         long aiStartTime = System.currentTimeMillis();
         AiProviderStrategy aiProviderStrategy = aiProviderFactory.getStrategy(request.getAiRequest().getAiProvider());
@@ -92,7 +94,10 @@ public class AIChatService {
 
     @Transactional
     public void deleteConversationById(String conversationId) {
+        conversationAccessService.validateConversationAccess(conversationId,SecurityUtils.getUserId());
         chatMemory.clear(conversationId);
         chatSessionRepository.deleteByConversationId(conversationId);
+        conversationAccessService.invalidateConversationAccess(conversationId,SecurityUtils.getUserId());
     }
+
 }

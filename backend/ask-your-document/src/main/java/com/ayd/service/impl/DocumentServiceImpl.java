@@ -121,7 +121,7 @@ public class DocumentServiceImpl implements DocumentService {
         UserDocument document = documentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Document", "id", id));
         if (!document.getUploadedBy().equals(userId)) {
-            throw new ActionNotPermittedException(userId, "Document", id);
+            throw new ActionNotPermittedException("User", "Document", "");
         }
         try {
             // Delete from or VectorDB first
