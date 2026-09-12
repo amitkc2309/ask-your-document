@@ -11,6 +11,8 @@ import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -22,9 +24,11 @@ public class OllamaProviderStrategy implements AiProviderStrategy {
     private final ChatClient chatClient;
     private final ChatModel chatModel;
 
-    public OllamaProviderStrategy(OllamaChatModel chatModel) {
+    public OllamaProviderStrategy(OllamaChatModel chatModel,
+                                  @Value("classpath:/templates/SystemPromptTemplate.st") Resource askAnswerSystemPrompt) {
         this.chatModel = chatModel;
         this.chatClient = ChatClient.builder(chatModel)
+                .defaultSystem(askAnswerSystemPrompt)
                 .defaultAdvisors(List.of(new SimpleLoggerAdvisor(), new TokenUsageAuditAdvisor()))
                 .build();
     }

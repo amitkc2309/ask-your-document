@@ -9,6 +9,8 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -19,9 +21,11 @@ public class OpenAiProviderStrategy implements AiProviderStrategy {
     private final ChatClient chatClient;
     private final ChatModel chatModel;
 
-    public OpenAiProviderStrategy(OpenAiChatModel chatModel) {
+    public OpenAiProviderStrategy(OpenAiChatModel chatModel,
+                                  @Value("classpath:/templates/SystemPromptTemplate.st") Resource askAnswerSystemPrompt) {
         this.chatModel = chatModel;
         this.chatClient = ChatClient.builder(chatModel)
+                .defaultSystem(askAnswerSystemPrompt)
                 .defaultAdvisors(List.of(new SimpleLoggerAdvisor(), new TokenUsageAuditAdvisor()))
                 .build();
     }

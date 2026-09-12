@@ -124,7 +124,7 @@ public class DocumentServiceImpl implements DocumentService {
             throw new ActionNotPermittedException(username, "Document", id);
         }
         try {
-            // Delete from Elasticsearch or VectorDB first
+            // Delete from or VectorDB first
             dbServices.deleteByDocumentId(id);
             // Delete the file from storage
             if (document.getFilePath() != null) {
