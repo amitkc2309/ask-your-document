@@ -4,11 +4,18 @@ import config from '../config/config';
 import api from '../api';
 import LayoutContainer from "./ui/LayoutContainer.tsx";
 
-const DocumentSearch = ({ question, setQuestion, searchResults, setSearchResults }) => {
+interface DocumentSearchProps {
+    question: string;
+    setQuestion: (question: string) => void;
+    searchResults: any;
+    setSearchResults: (results: any) => void;
+}
+
+const DocumentSearch = ({ question, setQuestion, searchResults, setSearchResults }: DocumentSearchProps) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const handleSearch = async (e) => {
+    const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!question.trim()) return;
 
@@ -23,7 +30,7 @@ const DocumentSearch = ({ question, setQuestion, searchResults, setSearchResults
             });
 
             setSearchResults(response.data);
-        } catch (err) {
+        } catch (err: any) {
             setError(err.response?.data?.message || 'Error performing search');
         } finally {
             setLoading(false);
@@ -82,7 +89,7 @@ const DocumentSearch = ({ question, setQuestion, searchResults, setSearchResults
                         Search Results
                     </h3>
 
-                    {searchResults.snippets?.map((result, index) => (
+                    {searchResults.snippets?.map((result: any, index: number) => (
                         <div
                             key={index}
                             className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow"

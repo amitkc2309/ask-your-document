@@ -1,5 +1,5 @@
 import {useEffect, useState, useRef} from 'react';
-import {ChatBubbleLeftIcon, DocumentTextIcon, TrashIcon} from '@heroicons/react/24/outline';
+import {ChatBubbleLeftIcon, TrashIcon} from '@heroicons/react/24/outline';
 import config from '../config/config';
 import {getToken, updateToken} from "../keycloak.ts";
 import LayoutContainer from "./ui/LayoutContainer.tsx";
@@ -13,28 +13,47 @@ import {
     deleteConversation
 } from './ChatApi.tsx';
 
+interface Message {
+    messageType: string;
+    text: string;
+    [key: string]: any;
+}
+
+interface Conversation {
+    id?: string;
+    conversationId?: string;
+    title?: string;
+    [key: string]: any;
+}
+
+interface ChatProps {
+    question: string;
+    setQuestion: (question: string) => void;
+    searchResults?: any;
+    setSearchResults: (results: any) => void;
+}
+
 const Chat = ({
                   question,
                   setQuestion,
-                  searchResults,
                   setSearchResults
-              }) => {
+              }: ChatProps) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const [availableModels, setAvailableModels] = useState({});
+    const [availableModels, setAvailableModels] = useState<Record<string, string[]>>({});
     const [aiProvider, setAiProvider] = useState('');
     const [modelName, setModelName] = useState('');
 
-    const [conversations, setConversations] = useState([]);
-    const [conversationId, setConversationId] = useState(null);
+    const [conversations, setConversations] = useState<Conversation[]>([]);
+    const [conversationId, setConversationId] = useState<string | null>(null);
 
-    const [messages, setMessages] = useState([]);
+    const [messages, setMessages] = useState<Message[]>([]);
 
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
-    const abortControllerRef = useRef(null);
-    const messagesEndRef = useRef(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
+    const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
     /*
      * Load AI providers/models
@@ -128,7 +147,7 @@ const Chat = ({
     /*
      * Open an existing conversation
      */
-    const handleSelectConversation = async (id) => {
+    const handleSelectConversation = async (id: string) => {
         if (loading) {
             return;
         }
@@ -172,7 +191,7 @@ const Chat = ({
     /*
      * Delete conversation
      */
-    const handleDeleteConversation = async (id) => {
+    const handleDeleteConversation = async (id: string) => {
         try {
             await deleteConversation(id);
 
@@ -197,8 +216,8 @@ const Chat = ({
     /*
      * Send message and stream AI response
      */
-    const handleSearch = async (e) => {
-        e.preventDefault();
+    const handleSearch = async (e?: React.SyntheticEvent) => {
+        e?.preventDefault();
 
         const text = question.trim();
 
@@ -226,7 +245,7 @@ const Chat = ({
             /*
              * Immediately add USER message to UI.
              */
-            const userMessage = {
+            const userMessage: Message = {
                 messageType: 'USER',
                 text
             };
@@ -256,8 +275,8 @@ const Chat = ({
             /*
              * Refresh token
              */
-            await new Promise((resolve) => {
-                updateToken(resolve);
+            await new Promise<void>((resolve) => {
+                updateToken(() => resolve());
             });
 
             const token = getToken();
@@ -378,9 +397,9 @@ const Chat = ({
              */
             await loadConversations();
 
-        } catch (err) {
+        } catch (err: any) {
 
-            if (err.name === 'AbortError') {
+            if (err?.name === 'AbortError') {
 
                 setMessages((prev) => {
 
@@ -634,7 +653,7 @@ const Chat = ({
                                     availableModels[
                                         aiProvider
                                         ] || []
-                                ).map((model) => (
+                                ).map((model: string) => (
                                     <option
                                         key={model}
                                         value={model}

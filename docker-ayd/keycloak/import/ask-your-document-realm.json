@@ -639,7 +639,7 @@
         "displayName" : "manage",
         "attributes" : { },
         "_id" : "50a507d2-6fad-4b8c-a4ea-21cedb0f2c75",
-        "uris" : [ "/actuator/*", "/manage/*" ],
+        "uris" : [ "/actuator/*", "/manage/*", "/ai/*" ],
         "scopes" : [ {
           "name" : "PATCH"
         }, {

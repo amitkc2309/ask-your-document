@@ -17,7 +17,7 @@ export async function getAllConversations() {
     return response.data;
 }
 
-export async function getConversation(conversationId) {
+export async function getConversation(conversationId: string) {
     const response = await api.get(`${config.apiUrl}/ai/conversation/${conversationId}`);
     if (!response.data) {
         throw new Error(`HTTP ${response.status}`);
@@ -25,7 +25,7 @@ export async function getConversation(conversationId) {
     return response.data;
 }
 
-export async function deleteConversation(conversationId) {
+export async function deleteConversation(conversationId: string) {
     try {
         await api.delete(`${config.apiUrl}/ai/conversation/${conversationId}`);
     }

@@ -55,8 +55,13 @@ function StatusRow({current, step, label}: {
     );
 }
 
+interface AppConfig {
+    aiMode: boolean;
+    [key: string]: any;
+}
+
 function App() {
-    const [config, setConfig] = useState(null);
+    const [config, setConfig] = useState<AppConfig | null>(null);
     const [activeTab, setActiveTab] = useState('search');
     const username = getUsername();
 
