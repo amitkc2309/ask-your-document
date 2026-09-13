@@ -1,16 +1,12 @@
 package com.ayd.tools;
 
-import com.ayd.security.SecurityUtils;
+import com.ayd.service.VectorStoreService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
 import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
-import org.springframework.ai.vectorstore.SearchRequest;
-import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.ai.vectorstore.filter.Filter;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -20,11 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class VectorStoreDocumentSearchTool {
 
-    private final VectorStore vectorStore;
-    @Value("${application.vector-store.top-k}")
-    Integer topK;
-    @Value("${application.vector-store.similarity-threshold}")
-    Double similarityThreshold;
+   private final VectorStoreService vectorStoreService;
 
     @Tool(name="vector_db_search",
     description = """
@@ -42,17 +34,6 @@ public class VectorStoreDocumentSearchTool {
             throw new IllegalStateException("Missing userId in tool context — refusing to search");
         }
         log.info("userId during vector_db_search tool: " + userId);
-        Filter.Expression vectorDBSearchFilter = new Filter.Expression(
-                Filter.ExpressionType.EQ,
-                new Filter.Key("uploadedBy"),
-                new Filter.Value(userId)
-        );
-        SearchRequest sr = SearchRequest.builder()
-                .query(semanticSearchQuery)
-                .topK(topK)
-                .similarityThreshold(similarityThreshold)
-                .filterExpression(vectorDBSearchFilter)
-                .build();
-        return vectorStore.similaritySearch(sr);
+        return vectorStoreService.search(userId, semanticSearchQuery);
     }
 }

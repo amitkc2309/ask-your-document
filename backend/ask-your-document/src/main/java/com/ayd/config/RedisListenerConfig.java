@@ -1,6 +1,6 @@
 package com.ayd.config;
 
-import com.ayd.service.DocumentStatusSubscriber;
+import com.ayd.pubsub.DocumentStatusSubscriber;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;

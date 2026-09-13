@@ -3,7 +3,7 @@ package com.ayd.controller;
 import com.ayd.dto.ChatRequest;
 import com.ayd.dto.ChatSessionsDto;
 import com.ayd.security.SecurityUtils;
-import com.ayd.service.impl.AIChatService;
+import com.ayd.service.AIChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
 import org.springframework.ai.chat.messages.Message;

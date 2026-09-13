@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface DocumentRepository extends JpaRepository<UserDocument, Long> {
+public interface UserDocumentRepository extends JpaRepository<UserDocument, Long> {
 
     // Find documents by author
     List<UserDocument> findByAuthorContainingIgnoreCase(String author);

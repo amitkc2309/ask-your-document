@@ -1,4 +1,4 @@
-package com.ayd.service;
+package com.ayd.pubsub;
 
 import com.ayd.dto.DocumentStatusEvent;
 import lombok.RequiredArgsConstructor;

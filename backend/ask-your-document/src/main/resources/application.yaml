@@ -14,7 +14,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update        #TODO: change to 'validate' or 'none' in production
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
@@ -135,10 +135,16 @@ application:
     similarity-threshold: 0.2
   semantic-cache:
     similarity-threshold: 0.9
+  llm-logs:
+    enabled: true
+  token-usage:
+    enabled: true
 
 
 logging:
   level:
+    com:
+      ayd: INFO
     org:
       springframework:
         ai:

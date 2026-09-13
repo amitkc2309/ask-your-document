@@ -1,7 +1,6 @@
-package com.ayd.service.impl;
+package com.ayd.service;
 
 import com.ayd.config.MinioConfig;
-import com.ayd.service.ObjectStorageService;
 import io.minio.*;
 import io.minio.errors.*;
 import jakarta.annotation.PostConstruct;
@@ -18,7 +17,7 @@ import java.security.NoSuchAlgorithmException;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class MinioStorageService implements ObjectStorageService {
+public class MinioStorageService implements IObjectStorage {
 
     private final MinioClient minioClient;
     private final MinioConfig minioConfig;

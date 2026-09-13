@@ -1,11 +1,10 @@
-package com.ayd.service.impl;
+package com.ayd.service;
 
 import com.ayd.dto.ChatRequest;
 import com.ayd.entity.ChatSessions;
 import com.ayd.factory.AiProviderFactory;
 import com.ayd.repository.ChatSessionRepository;
 import com.ayd.security.SecurityUtils;
-import com.ayd.service.ConversationAccessService;
 import com.ayd.strategy.AiProviderStrategy;
 import com.ayd.tools.VectorStoreDocumentSearchTool;
 import lombok.RequiredArgsConstructor;

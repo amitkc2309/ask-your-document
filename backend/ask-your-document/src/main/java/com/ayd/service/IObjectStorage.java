@@ -4,7 +4,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 
-public interface ObjectStorageService {
+public interface IObjectStorage {
     void upload(String objectId, MultipartFile file);
     InputStream download(String objectId);
     void delete(String objectId);

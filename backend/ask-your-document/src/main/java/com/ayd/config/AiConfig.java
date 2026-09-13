@@ -1,6 +1,9 @@
 package com.ayd.config;
 
+import com.ayd.advisors.TokenUsageAuditAdvisor;
 import io.micrometer.observation.ObservationRegistry;
+import org.springframework.ai.chat.client.ChatClientBuilderCustomizer;
+import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.memory.repository.jdbc.JdbcChatMemoryRepository;
@@ -12,6 +15,7 @@ import org.springframework.ai.ollama.management.ModelManagementOptions;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import redis.clients.jedis.RedisClient;
@@ -61,6 +65,18 @@ public class AiConfig {
         return RedisClient.builder()
                 .hostAndPort(redisHost, redisPort)
                 .build();
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "application.llm-logs.enabled", havingValue = "true")
+    public ChatClientBuilderCustomizer loggerAdvisor() {
+        return builder -> builder.defaultAdvisors(new SimpleLoggerAdvisor());
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "application.token-usage.enabled", havingValue = "true")
+    public ChatClientBuilderCustomizer auditAdvisor() {
+        return builder -> builder.defaultAdvisors(new TokenUsageAuditAdvisor());
     }
 
     @Bean

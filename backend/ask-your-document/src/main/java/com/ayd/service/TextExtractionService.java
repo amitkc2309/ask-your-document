@@ -17,7 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TextExtractionService {
 
-    private final ObjectStorageService objectStorageService;
+    private final IObjectStorage objectStorageService;
 
     public List<Document> extractTextFromFile(UserDocument document) throws IOException {
         if (document.getFilePath() == null) {

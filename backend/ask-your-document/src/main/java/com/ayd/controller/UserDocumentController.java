@@ -4,9 +4,9 @@ import com.ayd.dto.DocumentDTO;
 import com.ayd.dto.DocumentStatusEvent;
 import com.ayd.enums.DocumentType;
 import com.ayd.security.SecurityUtils;
-import com.ayd.service.DocumentService;
-import com.ayd.service.NotificationHub;
-import com.ayd.service.ObjectStorageService;
+import com.ayd.service.UserDocumentsService;
+import com.ayd.pubsub.NotificationHub;
+import com.ayd.service.IObjectStorage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -26,10 +26,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/manage/documents")
 @RequiredArgsConstructor
-public class DocumentController {
+public class UserDocumentController {
 
-    private final DocumentService documentService;
-    private final ObjectStorageService storageService;
+    private final UserDocumentsService userDocumentsService;
+    private final IObjectStorage storageService;
     private final NotificationHub notificationHub;
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -38,17 +38,15 @@ public class DocumentController {
             @RequestParam("title") String title,
             @RequestParam("author") String author) {
 
-        DocumentDTO dto = documentService.uploadDocument(file, title, author, SecurityUtils.getUserId());
+        DocumentDTO dto = userDocumentsService.uploadDocument(file, title, author, SecurityUtils.getUserId());
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(dto);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Resource> getDocumentById(@PathVariable Long id) {
-        DocumentDTO document = documentService.getDocumentById(id);
-
+        DocumentDTO document = userDocumentsService.mapToDTO(userDocumentsService.getDocumentById(id, SecurityUtils.getUserId()));
         InputStream fileInputStream = storageService.download(document.getFilePath());
         InputStreamResource resource = new InputStreamResource(fileInputStream);
-
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(document.getContentType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + document.getFileName() + "\"")
@@ -62,7 +60,7 @@ public class DocumentController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteDocument(@PathVariable Long id) {
-        documentService.deleteDocument(id, SecurityUtils.getUserId());
+        userDocumentsService.deleteDocument(id, SecurityUtils.getUserId());
         return ResponseEntity.ok().build();
     }
 
@@ -74,7 +72,7 @@ public class DocumentController {
 
         Pageable pageable = PageRequest.of(page, size);
 
-        List<DocumentDTO> result = documentService.findByAuthor(author);
+        List<DocumentDTO> result = userDocumentsService.findByAuthor(author);
 
         return ResponseEntity.ok(result);
     }
@@ -86,7 +84,7 @@ public class DocumentController {
             @RequestParam(defaultValue = "10") int size) {
 
 
-        List<DocumentDTO> result = documentService.findByTitle(title);
+        List<DocumentDTO> result = userDocumentsService.findByTitle(title);
 
         return ResponseEntity.ok(result);
     }
@@ -98,14 +96,14 @@ public class DocumentController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        List<DocumentDTO> result = documentService.findByDocumentType(documentType);
+        List<DocumentDTO> result = userDocumentsService.findByDocumentType(documentType);
 
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/all")
     public ResponseEntity<List<DocumentDTO>> getAllDocuments() {
-        List<DocumentDTO> result = documentService.getAllDocument();
+        List<DocumentDTO> result = userDocumentsService.getAllDocument();
         return ResponseEntity.ok(result);
     }
 

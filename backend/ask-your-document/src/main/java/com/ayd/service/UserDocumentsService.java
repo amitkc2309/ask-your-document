@@ -1,4 +1,4 @@
-package com.ayd.service.impl;
+package com.ayd.service;
 
 import com.ayd.config.KafkaConfig;
 import com.ayd.config.MinioConfig;
@@ -11,12 +11,10 @@ import com.ayd.enums.DocumentType;
 import com.ayd.enums.ProcessingStatus;
 import com.ayd.exception.ActionNotPermittedException;
 import com.ayd.exception.ResourceNotFoundException;
-import com.ayd.repository.DocumentRepository;
+import com.ayd.pubsub.DocumentStatusPublisher;
+import com.ayd.repository.UserDocumentRepository;
+
 import com.ayd.security.SecurityUtils;
-import com.ayd.service.DBServices;
-import com.ayd.service.DocumentService;
-import com.ayd.service.DocumentStatusPublisher;
-import com.ayd.service.ObjectStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -31,17 +29,16 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class DocumentServiceImpl implements DocumentService {
+public class UserDocumentsService {
 
-    private final DocumentRepository documentRepository;
-    private final ObjectStorageService storageService;
+    private final UserDocumentRepository userDocumentRepository;
+    private final IObjectStorage storageService;
     private final KafkaTemplate<String, DocumentProcessingMessage> kafkaTemplate;
-    private final DBServices dbServices;
+    private final VectorStoreService vectorStoreService;
     private final MinioConfig minioConfig;
     private final KafkaConfig kafkaConfig;
-    private final DocumentStatusPublisher  documentStatusPublisher;
+    private final DocumentStatusPublisher documentStatusPublisher;
 
-    @Override
     public DocumentDTO uploadDocument(MultipartFile file, String title, String author, String userId) {
 
         // Determine document type
@@ -60,7 +57,7 @@ public class DocumentServiceImpl implements DocumentService {
                 .build();
 
         // Save document metadata to get an ID
-        UserDocument savedDocument = documentRepository.save(document);
+        UserDocument savedDocument = userDocumentRepository.save(document);
         String objectId = userId + minioConfig.getMinioFileDelimiter() + savedDocument.getId();
         documentStatusPublisher.publish(new DocumentStatusEvent(savedDocument.getId(), userId, DocumentStatus.UPLOADING));
         // Store the file in the file system
@@ -68,7 +65,7 @@ public class DocumentServiceImpl implements DocumentService {
         documentStatusPublisher.publish(new DocumentStatusEvent(savedDocument.getId(), userId, DocumentStatus.UPLOADED));
         // Update the document with the file path
         savedDocument.setFilePath(objectId);
-        savedDocument = documentRepository.save(savedDocument);
+        savedDocument = userDocumentRepository.save(savedDocument);
 
         // Create a message for Kafka
         DocumentProcessingMessage message = DocumentProcessingMessage.builder()
@@ -91,7 +88,7 @@ public class DocumentServiceImpl implements DocumentService {
             log.error("Failed to send document processing message: {}", ex.getMessage(), ex);
             // Update document status to FAILED
             savedDocument.setProcessingStatus(ProcessingStatus.FAILED);
-            documentRepository.save(savedDocument);
+            userDocumentRepository.save(savedDocument);
             documentStatusPublisher.publish(new DocumentStatusEvent(savedDocument.getId(), userId, DocumentStatus.FAILED));
         }
 
@@ -101,37 +98,34 @@ public class DocumentServiceImpl implements DocumentService {
         return mapToDTO(savedDocument);
     }
 
-    @Override
     @Transactional(readOnly = true)
-    public DocumentDTO getDocumentById(Long id) {
+    public UserDocument getDocumentById(Long id, String userId) {
         log.debug("Fetching document by ID: {}", id);
-        UserDocument document = documentRepository.findById(id)
+        UserDocument document = userDocumentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Document", "id", id));
-        String userId = SecurityUtils.getUserId();
         if (!document.getUploadedBy().equals(userId)) {
             throw new ActionNotPermittedException(userId, "Document", id);
         }
-        return mapToDTO(document);
+        return document;
     }
 
-    @Override
     @Transactional
     public void deleteDocument(Long id, String userId) {
         log.info("Deleting document. ID: {}, userId: {}", id, userId);
-        UserDocument document = documentRepository.findById(id)
+        UserDocument document = userDocumentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Document", "id", id));
         if (!document.getUploadedBy().equals(userId)) {
             throw new ActionNotPermittedException("User", "Document", "");
         }
         try {
             // Delete from or VectorDB first
-            dbServices.deleteByDocumentId(id);
+            vectorStoreService.deleteByDocumentId(id);
             // Delete the file from storage
             if (document.getFilePath() != null) {
                 storageService.delete(document.getFilePath());
             }
             // Delete from database
-            documentRepository.delete(document);
+            userDocumentRepository.delete(document);
             log.info("Document deleted successfully. ID: {}", id);
         } catch (Exception e) {
             log.error("Error deleting document. ID: {}", id, e);
@@ -139,42 +133,42 @@ public class DocumentServiceImpl implements DocumentService {
         }
     }
 
-    @Override
     @Transactional(readOnly = true)
     public List<DocumentDTO> findByAuthor(String author) {
         log.debug("Searching documents by author: {}, Page: {}", author);
-        return documentRepository.findByAuthorContainingIgnoreCaseAndUploadedBy(author,SecurityUtils.getUserId())
+        return userDocumentRepository.findByAuthorContainingIgnoreCaseAndUploadedBy(author,SecurityUtils.getUserId())
                 .stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
-    @Override
     @Transactional(readOnly = true)
     public List<DocumentDTO> findByTitle(String title) {
         log.debug("Searching documents by title: {}, Page: {}", title);
-        return documentRepository
+        return userDocumentRepository
                 .findByTitleContainingIgnoreCaseAndUploadedBy(title,SecurityUtils.getUserId())
                 .stream().map(this::mapToDTO).collect(Collectors.toList());
 
     }
 
-    @Override
     public List<DocumentDTO> getAllDocument() {
-        return documentRepository
+        return userDocumentRepository
                 .findByUploadedBy(SecurityUtils.getUserId())
                 .stream().map(this::mapToDTO).collect(Collectors.toList());
 
     }
 
-    @Override
     @Transactional(readOnly = true)
     public List<DocumentDTO> findByDocumentType(DocumentType documentType) {
         log.debug("Searching documents by type: {}, Page: {}", documentType);
-        return documentRepository.findByDocumentTypeAndUploadedBy(documentType, SecurityUtils.getUserId())
+        return userDocumentRepository.findByDocumentTypeAndUploadedBy(documentType, SecurityUtils.getUserId())
                 .stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
+    public void saveUserDocument(UserDocument userDocument){
+        userDocumentRepository.save(userDocument);
+    }
 
-    private DocumentDTO mapToDTO(UserDocument document) {
+
+    public DocumentDTO mapToDTO(UserDocument document) {
         return DocumentDTO.builder()
                 .id(document.getId())
                 .title(document.getTitle())
