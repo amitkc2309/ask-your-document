@@ -9,7 +9,7 @@ services:
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=ayd-kafka:29092
       - SPRING_DATA_REDIS_HOST=ayd-redis
       - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://${MACHINE_URL}:7080/realms/ask-your-document
-      - SPRING_AI_OLLAMA_BASE_URL=http://${MACHINE_URL}:11434
+      - SPRING_AI_OLLAMA_BASE_URL=http://host.docker.internal:11434
       - SPRING_AI_VECTORSTORE_QDRANT_HOST=ayd-qdrant
       - APPLICATION_FRONTEND=http://localhost:5173
       - APPLICATION_KEYCLOAK_SERVER_URL=http://${MACHINE_URL}:7080
@@ -20,17 +20,20 @@ services:
       file: docker-common.yaml
       service: ayd-network-service
 
-#  ayd-frontend:
-#    container_name: ayd-frontend
-#    image: amitking2309/ask-your-document-ui
-#    ports:
-#      - "5173:5173"
-#    environment:
-#      - BACKEND_API_URL=http://ayd-backend:8080
-#      - KEYCLOAK_URL=http://host.docker.internal:7080
-#    extends:
-#      file: docker-common.yaml
-#      service: ayd-network-service
+  ayd-frontend:
+    container_name: ayd-frontend
+    image: amitking2309/ask-your-document-ui
+    build:
+      context: ../frontend/
+      dockerfile: Dockerfile
+      args:
+        VITE_BACKEND_API_URL: http://${MACHINE_URL}:8080
+        VITE_KEYCLOAK_URL: http://${MACHINE_URL}:7080
+    ports:
+      - "5173:80"
+    extends:
+      file: docker-common.yaml
+      service: ayd-network-service
 
 networks:
   ayd:
