@@ -1,0 +1,4 @@
+services:
+  ayd-network-service:
+    networks:
+      - ayd
