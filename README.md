@@ -1,103 +1,183 @@
 # Ask Your Document
 
-Ask Your Document is a sophisticated document management and intelligent search system that leverages AI to provide precise answers based on your uploaded documents. It features a modern microservices-friendly architecture with support for both traditional keyword search and advanced Retrieval-Augmented Generation (RAG).
+Ask Your Document is an AI-powered document assistant that lets authenticated users maintain their personal documents and chat with an AI about their content.
+Documents are processed asynchronously, stored in object storage, and indexed in a vector database for semantic search. 
+During an AI conversation, the LLM can retrieve relevant document context from the vector store when needed to provide grounded answers.
 
-## 🚀 Features
+---
 
-- **Multi-format Document Support**: Upload and process PDF, DOCX, TXT, and RTF files.
-- **Hybrid Search**: Combines traditional BM25 keyword search with Vector KNN search for optimal retrieval.
-- **AI-Powered Answers (RAG)**: Uses Large Language Models (LLM) to answer questions based on your documents with streaming responses (SSE).
-- **Asynchronous Processing**: Scalable document ingestion using Kafka for text extraction and embedding generation.
-- **Fine-grained Security**: Robust authentication and authorization powered by Keycloak, including path-based policy enforcement.
-- **Modern UI**: Clean and responsive React-based frontend for document management and interactive search.
-- **Dual Mode**: Switch between AI-enhanced search and standard Elasticsearch-based search.
+## Features
 
-## 🏗️ Technical Architecture
+- **AI Chat with Conversation Memory**: Have natural conversations with an AI assistant and maintain context across conversations.
+- **RAG-powered Answers**: The AI can search the document vector store when additional context is required.
+- **Multiple AI Provider Support**: Switch seamlessly between cloud LLMs (OpenAI models like GPT-4o / GPT-5) and locally 
+hosted models (Ollama with models like Qwen, Llama 3.1).
+- **Enterprise Security & Access Control**: Complete authentication and authorization powered by Keycloak OAuth2/OIDC,
+  supporting fine-grained resource and conversation access policies.
+- **Modern Responsive UI**: Clean, responsive frontend for easy conversation.
+---
+![AI_CHAT.png](extra/AI_CHAT.png)  
 
-The project follows a distributed architecture with the following components:
+![DOC_MANAGE.png](extra/DOC_MANAGE.png)
+---
+## Technical Architecture
+The system follows a microservices/event-driven modular architecture designed for high scalability, fault tolerance, and security.
 
-- **Frontend**: React-based Single Page Application.
-- **Backend**: Spring Boot 3 application with Virtual Threads enabled.
-- **Storage**: 
-  - **PostgreSQL**: Stores document metadata and application state.
-  - **MinIO**: Object storage for original document files.
-  - **Elasticsearch**: Acts as both a full-text search engine and a Vector database for embeddings.
-- **Messaging**: **Apache Kafka** handles asynchronous document processing tasks.
-- **Security**: **Keycloak** manages users, tokens (JWT), and fine-grained access policies.
-- **Cache**: **Redis** is used for caching security policies and other transient data.
+```
+                  +-------------------------------+
+                  |        React Frontend         |
+                  |     (Vite + Tailwind CSS)     |
+                  +---------------+---------------+
+                                  |
+                           HTTP / REST / SSE
+                                  |
+                                  v
++------------------+     +-------------------------------+     +--------------------+
+|  Keycloak OIDC   |<--->|      Spring Boot Backend      |<--->|   PostgreSQL DB    |
+| (Auth & Policies)|     |   (Spring AI + Web/Security)  |     | (Metadata, Memory) |
++------------------+     +---+-------------------+-------+     +--------------------+
+                             |                   |
+                    Document Upload            AI Chat
+                             |                   |
+                             v                   v
+                     +---------------+     +-------------------+
+                     | Apache Kafka  |     |  Ollama / OpenAI |
+                     |  (Event Bus)  |     |       LLMs       |
+                     +-------+-------+     +---------+---------+
+                             |                       |
+                    Document Ingestion                |
+                             |                       | RAG when required
+                             v                       |
+                     +---------------+               |
+                     |   Document    |               |
+                     |   Processing  |               |
+                     +-------+-------+               |
+                             |                       |
+                    +--------+--------+              |
+                    |                 |              |
+                    v                 v              v
+             +-------------+   +-------------+   +---+---------+
+             |    MinIO    |   |   Qdrant    |<--|   Vector    |
+             | Raw Docs    |   | Vector Store|   |   Search    |
+             +-------------+   +-------------+   +-------------+
+                                                   |
+                                                   | Relevant
+                                                   | Context
+                                                   v
+                                             Ollama / OpenAI
+                                                   |
+                                                   v
+                                              AI Response       
+```
 
-### Document Ingestion Flow
-1. User uploads a file via the API.
-2. Metadata is saved to PostgreSQL; file is stored in MinIO.
-3. An upload event is pushed to Kafka.
-4. The Document Processor (Kafka Consumer) picks up the event.
-5. Text is extracted, chunked, and embedded using an Embedding Model.
-6. Chunks and their vectors are indexed in Elasticsearch.
+## Run on Local Docker
 
-### Search Flow (AI Mode)
-1. User submits a natural language query.
-2. Query is optionally transformed/optimized by an LLM.
-3. **Hybrid Search**: Simultaneous BM25 and Vector KNN search in Elasticsearch.
-4. **Reciprocal Rank Fusion (RRF)**: Merges results from both search methods.
-5. **Re-ranking**: Top results are re-evaluated for relevance.
-6. **LLM Generation**: The top context chunks are sent to the LLM (via Spring AI) to generate a final answer.
-7. The answer is streamed back to the user via Server-Sent Events (SSE).
-
-## 🔒 Security Configuration
-
-Security is a core pillar of "Ask My Doc", implemented using **Spring Security** and **Keycloak**:
-
-- **Authentication**: JWT-based authentication. The frontend obtains a token from Keycloak and includes it in the `Authorization` header.
-- **Authorization**: 
-  - **Keycloak Policy Enforcer**: A custom filter (`KeycloakAuthFilter`) intercepts requests and validates them against Keycloak's Authorization Services (UMA).
-  - **Resource-Based Access**: Every API request is checked for specific permissions (Scopes like GET, POST, DELETE) against the resource (e.g., `/api/documents`).
-  - **Data Isolation**: All database queries (Postgres and Elasticsearch) are filtered by the `uploadedBy` field (extracted from the JWT) to ensure users only see their own documents.
-
-## 🛠️ Tech Stack
-
-- **Backend**: Java 21, Spring Boot 3.4+, Spring AI, Spring Data JPA, Spring Data Elasticsearch, Spring Kafka.
-- **Frontend**: React, TypeScript, Tailwind CSS, Vite.
-- **AI/ML**: Spring AI (supporting various LLM providers), Elasticsearch Vector Search, Re-ranking services.
-- **Infrastructure**: Docker & Docker Compose, PostgreSQL, Elasticsearch, Kafka, MinIO, Keycloak, Redis.
-
-## 🚦 Getting Started
+The repository includes docker-compose definitions in the `docker-ayd` directory for spinning up the full stack 
+(infrastructure dependencies, backend service, and frontend UI).
 
 ### Prerequisites
-- Docker and Docker Compose
-- Java 21+ (for backend development)
-- Node.js & npm (for frontend development)
 
-### Quick Start with Docker
-The project includes a `ask-my-doc-docker` directory with a pre-configured `docker-compose.yml` to spin up all infrastructure services.
+- [Docker](https://docs.docker.com/get-docker/) & [Docker Compose](https://docs.docker.com/compose/)
+- *(If using local LLMs)* [Ollama](https://ollama.com/search) installed and running locally on port `11434` with desired models pulled - 
+    - Pull any embedding model. e.g. `ollama pull nomic-embed-text`
+    - Pull any desired LLM capable of running on your local. Make sure it has _tools_ support. e.g.
+    (e.g. `ollama pull qwen3.5:4b` or `ollama pull llama3.1`).
+- *(If using OpenAI)* An OpenAI API key set as an environment variable (`OPENAI_API_KEY`).
+- Java 21
+- Maven
 
-1. Start infrastructure:
+### Step 1: Configure Environment Variables
+Navigate to the `docker-ayd` directory and prepare your environment settings:  
+Set the `MACHINE_URL` (usually your local IP address or `localhost` / `host.docker.internal` depending on your OS and Docker network setup).
+You can simply create an .env file and provide value like `MACHINE_URL=<your_machine_ip>`
+
+### Step 2: Start Infrastructure Services
+Start the core infrastructure services (PostgreSQL, Kafka, Redis, MinIO, Qdrant, Keycloak):
+```bash
+docker compose -f docker-compose-infra.yaml up -d
+```
+> **Note**: Wait a few seconds for Keycloak and PostgreSQL to initialize. It will also import the default realm (`ask-your-document`).
+
+### Step 3: Build Docker images for Backend & Frontend Application
+Navigate to the `backend/ask-your-document` and run -
+```bash
+mvn spring-boot:build-image -Dspring-boot.build-image.imageName=amitking2309/ask-your-document:latest
+```
+Navigate to the `frontend` and run -
+```bash
+docker build --no-cache -t amitking2309/ask-your-document-ui .
+```
+> **Note**: These command could take time to build images at first. Wait until image builds are successful.
+> 
+### Step 4: Start Backend & Frontend Application
+Navigate to the `docker-ayd` and start the backend and frontend application containers:
+```bash
+docker compose -f docker-compose.yaml up -d --build
+```
+### Step 5: Access the Application
+
+Application will be accessible on `http://localhost:5173/`
+- Register new user on keycloak and then login.
+- Upload your document on _Upload_ tab. While uploading you can see the document upload status.
+- On _Manage_ tab you can search, download or delete your uploaded documents.
+- Go into _Ask AI_ tab to chat with AI about your uploaded documents. You can also switch between AI providers and Models.
+
+| Service | URL | Credentials / Details |
+| :--- | :--- | :--- |
+| **Frontend UI** | [http://localhost:5173](http://localhost:5173) | Main application web interface |
+| **Keycloak Admin Console** | [http://localhost:7080](http://localhost:7080) | `admin` / `admin` (Realm: `ask-your-document`) |
+| **MinIO Console** | [http://localhost:9001](http://localhost:9001) | `minioadmin` / `minioadmin` |
+| **Qdrant Dashboard** | [http://localhost:6333/dashboard](http://localhost:6333/dashboard) | Vector database dashboard |
+| **Redis Stack UI** | [http://localhost:8001](http://localhost:8001) | Redis insight / re-ranking helper |
+
+To shut down the environment:
+
+```bash
+docker compose -f docker-compose.yaml down
+docker compose -f docker-compose-infra.yaml down
+```
+
+---
+
+
+## Configuration & Important Notes
+AI models and default parameters can be adjusted in `backend/ask-your-document/src/main/resources/application.yaml` or via Docker environment variables:
+
+```yaml
+application:
+  ai-mode: true
+  models:
+    openai:
+      - gpt-4o
+      - gpt-5-mini
+    ollama:
+      - qwen3.5:4b
+      - llama3.1
+  vector-store:
+    top-k: 5
+    similarity-threshold: 0.2
+  semantic-cache:
+    similarity-threshold: 0.9
+  reranker:
+    rerank: false
+```
+
+### Local Development Setup
+If running backend and frontend directly on the host machine (outside Docker):
+1. Set `MACHINE_URL=localhost`
+2. Start only infrastructure containers:
    ```bash
-   cd ask-my-doc-docker
-   docker-compose up -d
+   cd docker-ayd
+   docker compose -f docker-compose-infra.yaml up -d
    ```
-2. Configure Keycloak:
-   - Access Keycloak at `http://localhost:7080`.
-   - Create a realm `ask-my-doc` and a client `ask-my-doc-backend`.
-   - Setup Authorization services and policies (refer to `note.md` for specific details).
-
-3. Run the Backend:
+2. Start the Spring Boot backend:
    ```bash
-   cd ask-my-doc-backend/amd-manage-doc
+   cd ../backend/ask-your-document
    ./mvnw spring-boot:run
    ```
-
-4. Run the Frontend:
+3. Start the Frontend dev server:
    ```bash
-   cd ask-my-doc-frontend/ask-my-doc
+   cd ../../frontend/ask-your-document
    npm install
    npm run dev
    ```
-
-## ⚙️ Configuration
-
-Key configuration properties in `application.yaml`:
-- `application.ai-mode`: Toggle between `true` (RAG) and `false` (Standard Search).
-- `spring.ai.openai.api-key`: Your OpenAI API key (if using OpenAI).
-- `application.keycloak.*`: Connection details for Keycloak.
-- `spring.elasticsearch.uris`: Elasticsearch connection string.
-
