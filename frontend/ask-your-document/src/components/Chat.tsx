@@ -517,7 +517,7 @@ const Chat = ({
 
                                             <button
                                                 onClick={() =>
-                                                    handleSelectConversation(id)
+                                                    handleSelectConversation(id as string)
                                                 }
                                                 className="flex-1 min-w-0 text-left px-3 py-3"
                                             >
@@ -538,7 +538,7 @@ const Chat = ({
 
                                             <button
                                                 onClick={() =>
-                                                    handleDeleteConversation(id)
+                                                    handleDeleteConversation(id as string)
                                                 }
                                                 disabled={loading}
                                                 className="mr-2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive disabled:opacity-30"

@@ -1,7 +1,8 @@
 import Keycloak from 'keycloak-js';
+import config from './config/config';
 
 const keycloakConfig = {
-  url: 'http://localhost:7080',
+  url: `${config.keycloakUrl}`,
   realm: 'ask-your-document',
   clientId: 'ask-your-document-ui-client',
 };

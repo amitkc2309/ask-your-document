@@ -6,35 +6,32 @@ services:
       - "8080:8080"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://ayd-postgres:5432/ayddb
-      - SPRING_DATASOURCE_USERNAME=myuser
-      - SPRING_DATASOURCE_PASSWORD=mypassword
-      - SPRING_ELASTICSEARCH_URIS=http://ayd-elasticsearch:9200
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=ayd-kafka:29092
       - SPRING_DATA_REDIS_HOST=ayd-redis
-      - SPRING_DATA_REDIS_PORT=6379
-      - APPLICATION_STORAGE_LOCATION=/app/uploads
-      - APPLICATION_SECURITY_JWT_SECRET_KEY=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-      - APPLICATION_SECURITY_JWT_EXPIRATION=14400000
-    command: sh -c "chmod -R 777 //app/uploads"
-    volumes:
-      - document-uploads:/app/uploads
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://host.docker.internal:7080/realms/ask-your-document
+      - SPRING_AI_OLLAMA_BASE_URL=http://localhost:11434
+      - SPRING_AI_VECTORSTORE_QDRANT_HOST=ayd-qdrant
+      - APPLICATION.FRONTEND=http://localhost:5173
+      - APPLICATION_KEYCLOAK_SERVER_URL=http://host.docker.internal:7080
+      - APPLICATION_MINIO_URL=http://ayd-minio:9000
+      - APPLICATION_LLM_LOGS=false
+      - APPLICATION_TOKEN_UGASE=false
     extends:
       file: docker-common.yaml
       service: ayd-network-service
 
   ayd-frontend:
     container_name: ayd-frontend
-    build:
-      context: ../ayd-frontend
-      dockerfile: Dockerfile
     image: amitking2309/ask-your-document-ui
     ports:
-      - "3000:3000"
+      - "5173:5173"
     environment:
-      - NEXT_PUBLIC_API_URL=http://ayd-backend:8080
-      - NODE_ENV=production
-    networks:
-      - ayd
-    depends_on:
-      ayd-backend:
-        condition: service_healthy
+      - BACKEND_API_URL=http://ayd-backend:8080
+      - KEYCLOAK_URL=http://host.docker.internal:7080
+    extends:
+      file: docker-common.yaml
+      service: ayd-network-service
+
+networks:
+  ayd:
+    driver: "bridge"
