@@ -6,6 +6,8 @@ services:
       - "8080:8080"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://ayd-postgres:5432/ayddb
+      - SPRING_DATASOURCE_USERNAME=myuser
+      - SPRING_DATASOURCE_PASSWORD=mypassword
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=ayd-kafka:29092
       - SPRING_DATA_REDIS_HOST=ayd-redis
       - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://${MACHINE_URL}:7080/realms/ask-your-document
@@ -14,8 +16,15 @@ services:
       - APPLICATION_FRONTEND=http://localhost:5173
       - APPLICATION_KEYCLOAK_SERVER_URL=http://${MACHINE_URL}:7080
       - APPLICATION_MINIO_URL=http://ayd-minio:9000
+      - APPLICATION_MINIO_ACCESS_KEY=minioadmin
+      - APPLICATION_MINIO_SECRET_KEY=minioadmin
       - APPLICATION_LLM_LOGS_ENABLED=false
-      - APPLICATION_TOKEN_UGASE_ENABLED=false
+      - APPLICATION_TOKEN_USAGE_ENABLED=false
+      - APPLICATION_KEYCLOAK_CLIENT_SECRET=4vM9duLGyZasgPTig1OoKRHZ33Vv5Qpo
+      - APPLICATION_VECTOR_STORE_TOP_K=5
+      - APPLICATION_VECTOR_STORE_SIMILARITY_THRESHOLD=0.2
+      - SPRING_AI_OLLAMA_EMBEDDING_MODEL=nomic-embed-text
+      - SPRING_AI_OPENAI_API_KEY=${OPENAI_API_KEY}
       - LOGGING_LEVEL_COM_AYD=INFO
     extends:
       file: docker-common.yaml
