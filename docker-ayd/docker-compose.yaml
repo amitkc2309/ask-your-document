@@ -14,8 +14,9 @@ services:
       - APPLICATION_FRONTEND=http://localhost:5173
       - APPLICATION_KEYCLOAK_SERVER_URL=http://${MACHINE_URL}:7080
       - APPLICATION_MINIO_URL=http://ayd-minio:9000
-      - APPLICATION_LLM_LOGS=false
-      - APPLICATION_TOKEN_UGASE=false
+      - APPLICATION_LLM_LOGS_ENABLED=false
+      - APPLICATION_TOKEN_UGASE_ENABLED=false
+      - LOGGING_LEVEL_COM_AYD=INFO
     extends:
       file: docker-common.yaml
       service: ayd-network-service

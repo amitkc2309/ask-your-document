@@ -83,8 +83,7 @@ The repository includes docker-compose definitions in the `docker-ayd` directory
     - Pull any desired LLM capable of running on your local. Make sure it has _tools_ support. e.g.
     (e.g. `ollama pull qwen3.5:4b` or `ollama pull llama3.1`).
 - *(If using OpenAI)* An OpenAI API key set as an environment variable (`OPENAI_API_KEY`).
-- Java 21
-- Maven
+- Java 25
 
 ### Step 1: Configure Environment Variables
 Navigate to the `docker-ayd` directory and prepare your environment settings:  
@@ -101,7 +100,7 @@ docker compose -f docker-compose-infra.yaml up -d
 ### Step 3: Build Docker images for Backend & Frontend Application
 Navigate to the `backend/ask-your-document` and run -
 ```bash
-mvn spring-boot:build-image -Dspring-boot.build-image.imageName=amitking2309/ask-your-document:latest
+./mvnw spring-boot:build-image -Dspring-boot.build-image.imageName=amitking2309/ask-your-document:latest
 ```
 Navigate to the `frontend` and run -
 ```bash
@@ -160,7 +159,10 @@ application:
     similarity-threshold: 0.9
   reranker:
     rerank: false
+
 ```
+To see AI logs and token usage details, use following env variables: `APPLICATION_LLM_LOGS_ENABLED` & `APPLICATION_TOKEN_UGASE_ENABLED` in docker-compose file.  
+Logging levels such as `ERROR` & `INFO` can be set using env variable `LOGGING_LEVEL_COM_AYD`
 
 ### Local Development Setup
 If running backend and frontend directly on the host machine (outside Docker):
