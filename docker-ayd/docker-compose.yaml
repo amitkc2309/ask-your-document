@@ -25,7 +25,7 @@ services:
       - APPLICATION_VECTOR_STORE_SIMILARITY_THRESHOLD=0.2
       - SPRING_AI_OLLAMA_EMBEDDING_MODEL=nomic-embed-text
       - SPRING_AI_OPENAI_API_KEY=${OPENAI_API_KEY}
-      - LOGGING_LEVEL_COM_AYD=INFO
+      - LOGGING_LEVEL_COM_AYD=ERROR
     extends:
       file: docker-common.yaml
       service: ayd-network-service

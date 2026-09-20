@@ -49,7 +49,7 @@ services:
       service: ayd-network-service
 
   ayd-minio:
-    image: minio/minio:latest
+    image: quay.io/minio/minio:latest
     container_name: ayd-minio
     ports:
       - "9000:9000"       # S3 API
